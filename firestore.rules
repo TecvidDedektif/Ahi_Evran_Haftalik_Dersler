@@ -1,0 +1,38 @@
+// Firebase panelinde: Build > Firestore Database > Rules sekmesine yapıştır, Publish de.
+//
+// Ne yapar:
+//   - Herkes puan tablosunu okuyabilir.
+//   - Herkes yeni bir satır ekleyebilir (isim 1-14 harf, puan ve doğru sayısı tutarlı olmalı).
+//   - Var olan satır sadece aynı isimle ve DAHA YÜKSEK puanla güncellenebilir.
+//   - Kimse satır silemez. Silmek istediğinde Firebase panelinden elle silersin.
+//   - Bu yolun dışında hiçbir şey okunamaz ya da yazılamaz.
+//
+// Puan: her doğru cevap 100 puan, hız için en fazla 50 ek puan (soru başına).
+// Yani puan, doğru sayısı x 100 ile doğru sayısı x 150 arasında olmalı. En çok 20 soru var.
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /haftalar/{hafta}/skorlar/{kayit} {
+
+      function gecerli() {
+        let d = request.resource.data;
+        return hafta.matches('hafta-[0-9]+')
+          && kayit.size() >= 1 && kayit.size() <= 40
+          && d.keys().hasOnly(['ad', 'puan', 'dogru'])
+          && d.keys().hasAll(['ad', 'puan', 'dogru'])
+          && d.ad is string && d.ad.size() >= 1 && d.ad.size() <= 14
+          && d.dogru is int && d.dogru >= 0 && d.dogru <= 20
+          && d.puan is int && d.puan >= d.dogru * 100 && d.puan <= d.dogru * 150;
+      }
+
+      allow read: if true;
+      allow create: if gecerli();
+      allow update: if gecerli()
+        && request.resource.data.ad == resource.data.ad
+        && request.resource.data.puan > resource.data.puan;
+      allow delete: if false;
+    }
+  }
+}

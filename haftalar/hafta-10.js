@@ -10,6 +10,8 @@
      ters: true        ters köşe baloncuğu
      ders: true        hikâyeden çıkan sonuç
 
+   Zor yarış: dosyanın sonundaki zor: [...] listesi (20 soru). Doğru seçenek her zaman ilk yazılır.
+
    Arapça kelimede işaretler:
      ( )  med harfi  mavi      [ ]  hemze  kırmızı      { }  sükûn, şedde  mor
    ============================================================ */
@@ -349,5 +351,190 @@ DERS.haftaEkle({
         },
       ],
     },
+  ],
+
+  // =========================================================
+  // ZOR YARIŞ: 20 zor soru (her konudan 5). Tek kişilik yarış, puan tablosuna gider.
+  // Doğru seçenek her zaman ilk sıraya yazılır, ekranda karıştırılır.
+  // Seçenek düz metin olabilir ('Muttasıl') ya da { nl, tr } olabilir.
+  // =========================================================
+  zor: [
+    // ---------- Namaz ----------
+    { konu: 'namaz',
+      soru: { nl: 'In Fâtiha 6 zeg je “leid ons op het rechte pad” en niet “leid mij”. Wat leren we hiervan?', tr: 'Fâtiha 6’da “beni” değil “bizi doğru yola ilet” deriz. Bundan ne öğreniriz?' },
+      secenekler: [
+        { nl: 'Ook als je alleen bidt, vraag je het voor iedereen', tr: 'Tek başına kılsan da herkes için istersin' },
+        { nl: 'Je mag Fâtiha alleen in de moskee lezen', tr: 'Fâtiha’yı sadece camide okuyabilirsin' },
+        { nl: 'De imam bidt in jouw plaats', tr: 'Senin yerine imam dua eder' },
+        { nl: 'Het Arabisch heeft geen woord voor “ik”', tr: 'Arapçada “ben” kelimesi yoktur' },
+      ],
+      dogru: 0, aciklama: { nl: 'Het gebed maakt ons één groep: wat je voor jezelf wilt, vraag je ook voor de anderen.', tr: 'Namaz bizi bir topluluk yapar: kendin için istediğini başkaları için de istersin.' } },
+    { konu: 'namaz',
+      soru: { nl: 'In het verhaal van de 24 munten komt na één dag reizen een station. Wat is dat station?', tr: '24 altın misalinde bir günlük yoldan sonra gelen istasyon nedir?' },
+      secenekler: [
+        { nl: 'Het graf', tr: 'Kabir' },
+        { nl: 'De moskee', tr: 'Cami' },
+        { nl: 'Het einde van de dag', tr: 'Günün sonu' },
+        { nl: 'De geboorte', tr: 'Doğum' },
+      ],
+      dogru: 0, aciklama: { nl: 'Wie daar een kaartje (het gebed) heeft, reist door naar de boerderij: het Paradijs.', tr: 'Orada bileti (namazı) olan, çiftliğe, yani cennete yoluna devam eder.' } },
+    { konu: 'namaz',
+      soru: { nl: 'Welke zin klopt NIET met wat we over het gebed hebben geleerd?', tr: 'Hangisi namaz hakkında öğrendiklerimize UYMAZ?' },
+      secenekler: [
+        { nl: 'Allah heeft ons gebed nodig om sterker te worden', tr: 'Allah güçlenmek için namazımıza muhtaçtır' },
+        { nl: 'Het gebed is als een oplader voor je hart', tr: 'Namaz kalbin için bir şarj gibidir' },
+        { nl: 'Het gebed houdt je weg van slechte daden', tr: 'Namaz seni kötülüklerden uzak tutar' },
+        { nl: 'Samen bidden maakt ons broeders en zusters', tr: 'Cemaatle namaz bizi kardeş yapar' },
+      ],
+      dogru: 0, aciklama: { nl: 'Allah is Samed: Hij heeft niets nodig. Wij hebben het gebed nodig.', tr: 'Allah Samed’dir: O’nun hiçbir şeye ihtiyacı yok. Namaza ihtiyacı olan biziz.' } },
+    { konu: 'namaz',
+      soru: { nl: 'De vijf gebeden duren samen ongeveer één uur. Welk deel van je dag is dat?', tr: 'Beş vakit namaz toplam yaklaşık bir saat sürer. Günün kaçta kaçıdır?' },
+      secenekler: [
+        { nl: '1/24, één van de 24 munten', tr: '1/24, yani 24 altından biri' },
+        { nl: '1/12', tr: '1/12' },
+        { nl: '1/6', tr: '1/6' },
+        { nl: '1/4', tr: '1/4' },
+      ],
+      dogru: 0, aciklama: { nl: 'Eén uur van 24: één munt voor het kaartje, 23 voor al het andere.', tr: '24 saatin 1’i: bilet için bir altın, kalan 23’ü diğer işler için.' } },
+    { konu: 'namaz',
+      soru: { nl: 'De directeur en de schoonmaker staan schouder aan schouder in de rij. Waar kijkt Allah volgens de hadis naar?', tr: 'Müdür ile temizlikçi safta omuz omuza duruyor. Hadise göre Allah neye bakar?' },
+      secenekler: [
+        { nl: 'Naar ons hart en onze daden', tr: 'Kalplerimize ve amellerimize' },
+        { nl: 'Naar ons uiterlijk en ons geld', tr: 'Görünüşümüze ve malımıza' },
+        { nl: 'Naar onze functie', tr: 'Makamımıza' },
+        { nl: 'Naar hoe vooraan we staan', tr: 'Safın ne kadar önünde durduğumuza' },
+      ],
+      dogru: 0, aciklama: { nl: 'In de rij is iedereen gelijk.', tr: 'Safta herkes eşittir.' } },
+
+    // ---------- Sabır ----------
+    { konu: 'sabir',
+      soru: { nl: 'Iedereen in je klas kijkt naar een haram filmpje en jij zegt nee. Welk soort sabır is dit?', tr: 'Sınıfta herkes haram bir video izliyor, sen hayır diyorsun. Bu hangi sabır?' },
+      secenekler: [
+        { nl: 'Geduld tegenover het verkeerde', tr: 'Günaha karşı sabır' },
+        { nl: 'Geduld bij ibadet', tr: 'İbadette sabır' },
+        { nl: 'Geduld bij tegenslag', tr: 'Musibette sabır' },
+        { nl: 'Dit is geen sabır, het is gewoon saai', tr: 'Bu sabır değil, sadece sıkıcı' },
+      ],
+      dogru: 0, aciklama: { nl: 'Nee zeggen tegen wat haram is, ook als iedereen het doet.', tr: 'Herkes yapsa bile harama hayır demek.' } },
+    { konu: 'sabir',
+      soru: { nl: 'Waarom was het antwoord van de Profeet (s.a.s.) in Tâif geen zwakte?', tr: 'Peygamberimizin (s.a.s.) Tâif’teki cevabı neden zayıflık değildi?' },
+      secenekler: [
+        { nl: 'Hij kon hen laten straffen, maar koos voor geduld en hoop', tr: 'Onları cezalandırabilirdi ama sabrı ve ümidi seçti' },
+        { nl: 'Hij was bang voor de engel', tr: 'Melekten korktu' },
+        { nl: 'Hij had geen kracht om terug te slaan', tr: 'Karşılık verecek gücü yoktu' },
+        { nl: 'Hij wilde zo snel mogelijk naar huis', tr: 'Bir an önce eve dönmek istedi' },
+      ],
+      dogru: 0, aciklama: { nl: 'De engel bood twee bergen aan. Sabır is kracht die je goed gebruikt.', tr: 'Melek iki dağı teklif etti. Sabır, gücü iyi kullanmaktır.' } },
+    { konu: 'sabir',
+      soru: { nl: 'Toen zijn zoontje İbrahim stierf, huilde de Profeet (s.a.s.). Wat leren we hiervan over sabır?', tr: 'Oğlu İbrahim vefat edince Peygamberimiz (s.a.s.) ağladı. Bundan sabır hakkında ne öğreniriz?' },
+      secenekler: [
+        { nl: 'Huilen mag; sabır zit in wat je zegt en doet', tr: 'Ağlamak olur; sabır, söylediğin ve yaptığındadır' },
+        { nl: 'Een geduldig mens huilt nooit', tr: 'Sabırlı insan hiç ağlamaz' },
+        { nl: 'Je moet doen alsof er niets gebeurd is', tr: 'Hiçbir şey olmamış gibi davranmalısın' },
+        { nl: 'Verdriet voelen is een zonde', tr: 'Üzülmek günahtır' },
+      ],
+      dogru: 0, aciklama: { nl: '“Het oog traant, het hart is bedroefd, maar wij zeggen alleen wat onze Heer tevreden stelt.”', tr: '“Göz yaşarır, kalp üzülür; ama biz ancak Rabbimizin razı olacağı sözü söyleriz.”' } },
+    { konu: 'sabir',
+      soru: { nl: 'Een leerling zegt: “Ik heb sabır” en doet niets voor de toets. Wat klopt volgens de les?', tr: 'Bir öğrenci “sabrediyorum” deyip sınav için hiçbir şey yapmıyor. Derse göre doğru olan hangisi?' },
+      secenekler: [
+        { nl: 'Sabır is doen wat je kunt en daarna op Allah vertrouwen', tr: 'Sabır, elinden geleni yapıp sonra Allah’a güvenmektir' },
+        { nl: 'Sabır is stil wachten tot het vanzelf goed komt', tr: 'Sabır, kendiliğinden düzelmesini sessizce beklemektir' },
+        { nl: 'Sabır betekent nooit iets proberen', tr: 'Sabır hiçbir şeyi denememektir' },
+        { nl: 'Sabır is alleen voor ziekte', tr: 'Sabır sadece hastalık içindir' },
+      ],
+      dogru: 0 },
+    { konu: 'sabir',
+      soru: { nl: 'In Mekka werd drie jaar lang niets aan de moslims verkocht. Hoe reageerde de Profeet (s.a.s.) volgens de les?', tr: 'Mekke’de üç yıl boyunca Müslümanlara hiçbir şey satılmadı. Derse göre Peygamberimiz (s.a.s.) nasıl davrandı?' },
+      secenekler: [
+        { nl: 'Hij gaf zijn boodschap niet op', tr: 'Davasından vazgeçmedi' },
+        { nl: 'Hij verliet Mekka meteen', tr: 'Hemen Mekke’den ayrıldı' },
+        { nl: 'Hij boycotte de mensen van Mekka ook', tr: 'O da Mekkelileri boykot etti' },
+        { nl: 'Hij vroeg een engel om de stad te straffen', tr: 'Bir melekten şehri cezalandırmasını istedi' },
+      ],
+      dogru: 0, aciklama: { nl: 'Er was honger, maar hij hield vol.', tr: 'Açlık vardı ama o dayandı.' } },
+
+    // ---------- Kur'an: Yâsîn 55-70 ve medler ----------
+    { konu: 'kuran',
+      soru: { nl: 'Welke medd zit er in “neşâü” (“Wij willen”, âyet 66)?', tr: '“Neşâü” (“dileriz”, 66. âyet) kelimesinde hangi med var?' },
+      secenekler: ['Muttasıl', 'Tabiî', 'Munfasıl', 'Lâzım'],
+      dogru: 0, aciklama: { nl: 'De medd-letter (â) en de hemze (ü) staan in hetzelfde woord: Muttasıl, 4 tellen.', tr: 'Med harfi (â) ile hemze (ü) aynı kelimede: Muttasıl, 4 hareke.' } },
+    { konu: 'kuran',
+      soru: { nl: 'Wat is het verschil tussen Muttasıl en Munfasıl?', tr: 'Muttasıl ile Munfasıl arasındaki fark nedir?' },
+      secenekler: [
+        { nl: 'Muttasıl: medd-letter en hemze in één woord. Munfasıl: in twee woorden', tr: 'Muttasıl: med harfi ve hemze tek kelimede. Munfasıl: iki ayrı kelimede' },
+        { nl: 'Muttasıl is 2 tellen, Munfasıl is 4 tellen', tr: 'Muttasıl 2, Munfasıl 4 hareke' },
+        { nl: 'Muttasıl heeft een şedde, Munfasıl niet', tr: 'Muttasılda şedde var, Munfasılda yok' },
+        { nl: 'Muttasıl is voor lange woorden, Munfasıl voor korte', tr: 'Muttasıl uzun, Munfasıl kısa kelimeler içindir' },
+      ],
+      dogru: 0 },
+    { konu: 'kuran',
+      soru: { nl: 'Welke twee medd’s rek je even lang?', tr: 'Hangi iki medd aynı uzunlukta okunur?' },
+      secenekler: [
+        { nl: 'Muttasıl en Munfasıl (beide 4 tellen)', tr: 'Muttasıl ve Munfasıl (ikisi de 4 hareke)' },
+        { nl: 'Tabiî en Muttasıl', tr: 'Tabiî ve Muttasıl' },
+        { nl: 'Munfasıl en Lâzım', tr: 'Munfasıl ve Lâzım' },
+        { nl: 'Tabiî en Lâzım', tr: 'Tabiî ve Lâzım' },
+      ],
+      dogru: 0, aciklama: { nl: 'Tabiî 2, Muttasıl 4, Munfasıl 4, Lâzım 6 tellen.', tr: 'Tabiî 2, Muttasıl 4, Munfasıl 4, Lâzım 6 hareke.' } },
+    { konu: 'kuran',
+      soru: { nl: 'Welke twee lichaamsdelen spreken en getuigen volgens Yâsîn 65?', tr: 'Yâsîn 65’e göre hangi iki uzuv konuşur ve şahitlik eder?' },
+      secenekler: [
+        { nl: 'De handen en de voeten', tr: 'Eller ve ayaklar' },
+        { nl: 'De ogen en de oren', tr: 'Gözler ve kulaklar' },
+        { nl: 'De mond en de tong', tr: 'Ağız ve dil' },
+        { nl: 'Het hoofd en het hart', tr: 'Baş ve kalp' },
+      ],
+      dogru: 0, aciklama: { nl: 'De monden worden verzegeld. De handen spreken en de voeten getuigen.', tr: 'Ağızlar mühürlenir. Eller konuşur, ayaklar şahitlik eder.' } },
+    { konu: 'kuran',
+      soru: { nl: 'Wat zegt âyet 69 over de Koran?', tr: '69. âyet Kur’an hakkında ne der?' },
+      secenekler: [
+        { nl: 'Het is geen gedicht, maar een herinnering en een duidelijke Koran', tr: 'Şiir değildir; bir öğüt ve apaçık bir Kur’an’dır' },
+        { nl: 'Het is een gewoon gedicht', tr: 'Sıradan bir şiirdir' },
+        { nl: 'Het is alleen voor geleerden', tr: 'Sadece âlimler içindir' },
+        { nl: 'Het is een geschiedenisboek', tr: 'Bir tarih kitabıdır' },
+      ],
+      dogru: 0 },
+
+    // ---------- İhlâs ----------
+    { konu: 'ezber',
+      soru: { nl: 'Een vriend zegt: “Allah heeft ons gebed nodig.” Welk woord uit sûre İhlâs laat zien dat dat niet klopt?', tr: 'Bir arkadaşın “Allah’ın namazımıza ihtiyacı var” diyor. İhlâs Sûresi’ndeki hangi kelime bunun doğru olmadığını gösterir?' },
+      secenekler: ['Samed', 'Ehad', 'Yûled', 'Küfüven'],
+      dogru: 0, aciklama: { nl: 'Samed: alles heeft Hem nodig, Hij heeft niets nodig.', tr: 'Samed: her şey O’na muhtaç, O hiçbir şeye muhtaç değil.' } },
+    { konu: 'ezber',
+      soru: { nl: 'Wat vroegen de afgodendienaars in Mekka aan de Profeet (s.a.s.) voordat sûre İhlâs kwam?', tr: 'İhlâs Sûresi gelmeden önce Mekkeli putperestler Peygamberimize (s.a.s.) ne sordu?' },
+      secenekler: [
+        { nl: 'Vertel ons de afkomst van jouw Heer', tr: 'Bize Rabbinin soyunu anlat' },
+        { nl: 'Hoeveel gebeden moeten wij doen?', tr: 'Bizim kaç vakit namaz kılmamız gerekir?' },
+        { nl: 'Waar is jouw Heer?', tr: 'Rabbin nerede?' },
+        { nl: 'Wie heeft de Koran geschreven?', tr: 'Kur’an’ı kim yazdı?' },
+      ],
+      dogru: 0, aciklama: { nl: 'Het antwoord was sûre İhlâs: vier korte âyets.', tr: 'Cevap İhlâs Sûresi oldu: dört kısa âyet.' } },
+    { konu: 'ezber',
+      soru: { nl: 'Met hoeveel van de Koran vergeleek de Profeet (s.a.s.) sûre İhlâs?', tr: 'Peygamberimiz (s.a.s.) İhlâs Sûresi’ni Kur’an’ın kaçta kaçına denk saydı?' },
+      secenekler: [
+        { nl: 'Een derde', tr: 'Üçte biri' },
+        { nl: 'De helft', tr: 'Yarısı' },
+        { nl: 'Een kwart', tr: 'Dörtte biri' },
+        { nl: 'Een tiende', tr: 'Onda biri' },
+      ],
+      dogru: 0 },
+    { konu: 'ezber',
+      soru: { nl: 'In welke âyet staat “Lem yelid ve lem yûled”?', tr: '“Lem yelid ve lem yûled” hangi âyettedir?' },
+      secenekler: [
+        { nl: 'De derde âyet', tr: '3. âyet' },
+        { nl: 'De eerste âyet', tr: '1. âyet' },
+        { nl: 'De tweede âyet', tr: '2. âyet' },
+        { nl: 'De vierde âyet', tr: '4. âyet' },
+      ],
+      dogru: 0, aciklama: { nl: 'Hij heeft niet verwekt en is niet verwekt. De vierde âyet zegt: niemand is aan Hem gelijk.', tr: 'O doğurmamış ve doğmamıştır. 4. âyet: hiçbir şey O’na denk değildir.' } },
+    { konu: 'ezber',
+      soru: { nl: 'Met welk woord begint sûre İhlâs en wat betekent het?', tr: 'İhlâs Sûresi hangi kelimeyle başlar ve ne demektir?' },
+      secenekler: [
+        { nl: 'Kul: zeg', tr: 'Kul: de ki' },
+        { nl: 'Hüve: Hij', tr: 'Hüve: O' },
+        { nl: 'Ehad: één', tr: 'Ehad: bir' },
+        { nl: 'Lem: niet', tr: 'Lem: değil' },
+      ],
+      dogru: 0 },
   ],
 });
