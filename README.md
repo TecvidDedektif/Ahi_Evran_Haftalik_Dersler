@@ -8,12 +8,23 @@ Adres (Pages açıldıktan sonra): https://tecviddedektif.github.io/Ahi_Evran_Ha
 
 - **Sohbet:** konular hikâye gibi adım adım açılır. Çocuk "Sen ne dersin?" sorusuna cevap seçer, sonra ters köşe gelir.
 - **İşaret kalemi:** konu sayfalarında sağ alttaki "Stift · Kalem" düğmesi. Dört renk ve silgi var. Kelimeye dokununca ya da parmak cümlenin üstünden yana kaydırılınca işaretlenir.
-- **Yarış:** haftanın sorularıyla isimli yarış. Tek telefonda ya da büyük ekranda sırayla oynanır, tek başına da olur. Herkese 5 soru, soru başına 20 saniye; doğru cevap 100 puan, hızlı cevap 50 puana kadar ek puan.
+- **Zor yarış ve puan tablosu:** haftanın 20 zor sorusu, tek kişilik, soru başına 30 saniye. Çocuk sonunda kendisi "Gönder"e basarsa ön adı ve puanı ortak puan tablosuna çıkar; herkes aynı tabloyu görür.
+- **Sınıf yarışı:** haftanın sorularıyla isimli yarış. Tek telefonda ya da büyük ekranda sırayla oynanır, tek başına da olur. Herkese 5 soru, soru başına 20 saniye; doğru cevap 100 puan, hızlı cevap 50 puana kadar ek puan.
 - **Oyunlar ve yıldızlar:** dönen kartlar, mini quiz, "hangi med" oyunu, âyet sıralama.
 
 ## Gizlilik
 
-Site üyelik istemez ve hiçbir yere veri göndermez. Yıldızlar, kalem işaretleri ve yarışta yazılan isimler sadece o cihazın tarayıcısında durur. Yarış sayfasındaki "İsimleri ve sıralamayı sil" düğmesi isimleri o cihazdan siler.
+Site üyelik istemez. Yıldızlar, kalem işaretleri ve sınıf yarışında yazılan isimler sadece o cihazın tarayıcısında durur. Yarış sayfasındaki "İsimleri ve sıralamayı sil" düğmesi isimleri o cihazdan siler.
+
+Sunucuya giden tek şey Zor yarışın puanıdır, o da sadece çocuk "Gönder"e basarsa: ön ad (en çok 14 harf), puan ve doğru sayısı. Velilerden izin alındı. Tablo okunurken hiçbir şey gönderilmez.
+
+## Puan tablosu (Firebase)
+
+- Sunucu: Firebase Firestore, proje `ahi-evran-haftalik-dersler`. Kod `js/tablo.js` içinde, kütüphane yüklenmez.
+- Veri yeri: `haftalar/<hafta>/skorlar/<isim>`. Her isim için haftada tek satır, en iyi puan kalır.
+- Güvenlik kuralları `firestore.rules` dosyasında. Firebase panelinde Build > Firestore Database > Rules sekmesine yapıştırılıp Publish denir. Kurallar şunu sağlar: herkes okuyabilir; yeni satır eklenebilir; var olan satır sadece daha yüksek puanla güncellenebilir; kimse silemez; puan doğru sayısıyla tutarlı olmalı.
+- **Bir ismi silmek:** Firebase paneli > Firestore Database > Data > `haftalar` > `hafta-10` > `skorlar` > ismi seç > üç nokta > Delete document.
+- `apiKey` gizli değildir; web sitelerinde herkese açık durur. Kimin ne yazabileceğini kurallar belirler.
 
 ## Dosyalar
 
@@ -24,6 +35,8 @@ js/dersler.js         uygulama (sayfalar, sohbet, oyunlar, kalem, yarış)
 haftalar/liste.js     hangi haftalar var, hangi sırayla
 haftalar/hafta-10.js  10. haftanın bütün içeriği
 fonts/                yazı tipleri (lisansları yanında)
+js/tablo.js           ortak puan tablosu (Firebase)
+firestore.rules       puan tablosunun güvenlik kuralları
 ikon.svg              sekme simgesi
 ```
 
@@ -58,7 +71,22 @@ Konu renkleri (`renk`): `ibadet` yeşil, `siyer` turuncu, `kuran` mavi, `ezber` 
 
 Yıldızlar: hepsi doğruysa 3, en az yüzde 70 doğruysa 2, en az yüzde 40 doğruysa 1.
 
-Yarışın soruları ayrıca yazılmaz: haftadaki `quiz` soruları ve `medd` kelimeleri kendiliğinden yarışa girer. Bir konunun `id` değeri `yaris` olamaz, bu ad yarış sayfasına ayrılmıştır.
+Sınıf yarışının soruları ayrıca yazılmaz: haftadaki `quiz` soruları ve `medd` kelimeleri kendiliğinden yarışa girer. Bir konunun `id` değeri `yaris` ya da `zor` olamaz, bu adlar yarış sayfalarına ayrılmıştır.
+
+Zor yarış için haftanın dosyasının sonuna `zor` listesi eklenir (20 soru, her konudan 5). Liste yoksa o haftada Zor yarış ve puan tablosu görünmez.
+
+```js
+zor: [
+  { konu: 'namaz',
+    soru: { nl: '...', tr: '...' },
+    secenekler: [{ nl: 'doğru cevap', tr: '...' }, { nl: '...', tr: '...' }, { nl: '...', tr: '...' }, { nl: '...', tr: '...' }],
+    dogru: 0,
+    aciklama: { nl: '...', tr: '...' } },
+  // ...
+],
+```
+
+Puan: doğru cevap 100, hız için 50'ye kadar ek puan; 20 soruda en çok 3000.
 
 ## Sohbet bloğu
 

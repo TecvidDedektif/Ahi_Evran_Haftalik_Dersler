@@ -15,8 +15,10 @@
 <main class="kap" id="govde"></main>
 
 <footer class="alt kap">
-  <p>Gemaakt voor de weekendklas van Ahi Evran Camii. Deze site vraagt geen account en verstuurt geen gegevens. Je sterren, je markeringen en de namen van de wedstrijd blijven alleen op je eigen apparaat.
-  <span class="tr" lang="tr">Ahi Evran Camii hafta sonu sınıfı için hazırlandı. Bu site üyelik istemez, hiçbir veri göndermez. Yıldızların, işaretlerin ve yarıştaki isimler sadece kendi cihazında durur.</span></p>
+  <p>Gemaakt voor de weekendklas van Ahi Evran Camii. Deze site vraagt geen account. Je sterren, je markeringen en de namen van de klaswedstrijd blijven alleen op je eigen apparaat.
+  Alleen als je bij de Moeilijke wedstrijd zelf op “Verstuur” drukt, worden je voornaam en score op het openbare scorebord gezet en bewaard bij Firebase (Google). Wil je je naam eraf? Vraag het aan je leraar.
+  <span class="tr" lang="tr">Ahi Evran Camii hafta sonu sınıfı için hazırlandı. Bu site üyelik istemez. Yıldızların, işaretlerin ve sınıf yarışındaki isimler sadece kendi cihazında durur.
+  Sadece Zor yarışta kendin “Gönder”e basarsan ön adın ve puanın herkese açık puan tablosuna yazılır ve Firebase’de (Google) saklanır. İsminin silinmesini istersen hocana söyle.</span></p>
 </footer>
 
 <!-- İşaret kalemi: sadece konu sayfalarında görünür -->
@@ -24,7 +26,8 @@
 
 <noscript><p class="kap">Deze site heeft JavaScript nodig. · Bu site için JavaScript açık olmalı.</p></noscript>
 
-<!-- Sıra önemli: önce uygulama, sonra hafta listesi. Hafta dosyaları listeden kendiliğinden yüklenir. -->
+<!-- Sıra önemli: önce puan tablosu ve uygulama, sonra hafta listesi. Hafta dosyaları listeden kendiliğinden yüklenir. -->
+<script src="js/tablo.js"></script>
 <script src="js/dersler.js"></script>
 <script src="haftalar/liste.js"></script>
 </body>
