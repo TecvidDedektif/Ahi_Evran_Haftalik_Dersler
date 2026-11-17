@@ -8,23 +8,41 @@ Adres (Pages açıldıktan sonra): https://tecviddedektif.github.io/Ahi_Evran_Ha
 
 - **Sohbet:** konular hikâye gibi adım adım açılır. Çocuk "Sen ne dersin?" sorusuna cevap seçer, sonra ters köşe gelir.
 - **İşaret kalemi:** konu sayfalarında sağ alttaki "Stift · Kalem" düğmesi. Dört renk ve silgi var. Kelimeye dokununca ya da parmak cümlenin üstünden yana kaydırılınca işaretlenir.
-- **Zor yarış ve puan tablosu:** haftanın 20 zor sorusu, tek kişilik, soru başına 30 saniye. Çocuk sonunda kendisi "Gönder"e basarsa ön adı ve puanı ortak puan tablosuna çıkar; herkes aynı tabloyu görür.
+- **Zor yarış ve puan tablosu:** 40 zor sorudan her oyunda 20'si (her konudan 5), soru başına 30 saniye. Doğru cevap gösterilmez; sonda bilinemeyen sorular, cevabın bulunacağı konuya bağlantıyla listelenir. Hocanın açtığı hesapla giriş yapılır, günde bir hak vardır, haftanın en iyi puanı ortak tabloya yazılır.
 - **Sınıf yarışı:** haftanın sorularıyla isimli yarış. Tek telefonda ya da büyük ekranda sırayla oynanır, tek başına da olur. Herkese 5 soru, soru başına 20 saniye; doğru cevap 100 puan, hızlı cevap 50 puana kadar ek puan.
 - **Oyunlar ve yıldızlar:** dönen kartlar, mini quiz, "hangi med" oyunu, âyet sıralama.
 
 ## Gizlilik
 
-Site üyelik istemez. Yıldızlar, kalem işaretleri ve sınıf yarışında yazılan isimler sadece o cihazın tarayıcısında durur. Yarış sayfasındaki "İsimleri ve sıralamayı sil" düğmesi isimleri o cihazdan siler.
+Yıldızlar, kalem işaretleri ve sınıf yarışında yazılan isimler sadece o cihazın tarayıcısında durur. Yarış sayfasındaki "İsimleri ve sıralamayı sil" düğmesi isimleri o cihazdan siler.
 
-Sunucuya giden tek şey Zor yarışın puanıdır, o da sadece çocuk "Gönder"e basarsa: ön ad (en çok 14 harf), puan ve doğru sayısı. Velilerden izin alındı. Tablo okunurken hiçbir şey gönderilmez.
+Zor yarış için hesapları hoca açar (velilerden izin alındı). Sunucuda tutulanlar: kullanıcı adı ve şifre (Firebase Authentication), tabloda görünen ön ad (`ogrenciler`), haftanın en iyi puanı, doğru sayısı ve deneme bilgisi. Oturum bilgisi çocuğun cihazında durur, "Çıkış" ile silinir. Tablo okunurken hiçbir şey gönderilmez; ana sayfa ve konu sayfaları sunucuya hiç bağlanmaz.
 
-## Puan tablosu (Firebase)
+## Puan tablosu ve hesaplar (Firebase)
 
-- Sunucu: Firebase Firestore, proje `ahi-evran-haftalik-dersler`. Kod `js/tablo.js` içinde, kütüphane yüklenmez.
-- Veri yeri: `haftalar/<hafta>/skorlar/<isim>`. Her isim için haftada tek satır, en iyi puan kalır.
-- Güvenlik kuralları `firestore.rules` dosyasında. Firebase panelinde Build > Firestore Database > Rules sekmesine yapıştırılıp Publish denir. Kurallar şunu sağlar: herkes okuyabilir; yeni satır eklenebilir; var olan satır sadece daha yüksek puanla güncellenebilir; kimse silemez; puan doğru sayısıyla tutarlı olmalı.
-- **Bir ismi silmek:** Firebase paneli > Firestore Database > Data > `haftalar` > `hafta-10` > `skorlar` > ismi seç > üç nokta > Delete document.
-- `apiKey` gizli değildir; web sitelerinde herkese açık durur. Kimin ne yazabileceğini kurallar belirler.
+- Proje: `ahi-evran-haftalik-dersler`. Kod `js/tablo.js` içinde, kütüphane yüklenmez.
+- Hesaplar: Firebase Authentication, e-posta/şifre. E-posta uydurmadır: `orhan@ahievran.example`. Çocuk girişte sadece `orhan` yazar.
+- Sınıf listesi: `ogrenciler/<UID>` belgesi, tek alan `ad` (tabloda görünen isim, Türkçe harfler olur). Listede olmayan hesap puan yazamaz.
+- Puanlar: `haftalar/<hafta>/skorlar/<UID>`: `ad`, `puan`, `dogru` (haftanın en iyisi), `son` (son denemenin başlangıcı), `acik`, `deneme`.
+- Günde bir hak: deneme, yarış başlarken yazılır; aynı gün ikinci başlangıcı kurallar reddeder. Gün sunucu saatine (UTC) göre değişir: Hollanda'da kışın 01:00, yazın 02:00. Yarıda bırakılan oyun o günün hakkını kullanmış sayılır. Başlangıçtan 20 dakika sonra bitirilen tur kaydedilmez.
+- Güvenlik kuralları `firestore.rules` dosyasında: Firebase paneli > Firestore Database > Rules > yapıştır > Publish.
+
+### Yeni çocuk eklemek
+
+1. Authentication > Users > Add user: `kullaniciadi@ahievran.example` ve en az 6 karakterli şifre.
+2. Listede çıkan **User UID**'yi kopyala.
+3. Firestore Database > Data > `ogrenciler` > Add document: Document ID = UID, alan `ad` (string) = tabloda görünecek isim.
+4. Kullanıcı adını ve şifreyi çocuğa kâğıtla ver.
+
+### Şifre unutulunca
+
+Authentication > Users > hesabın sağındaki üç nokta > **Reset password** e-posta gönderir; adres uydurma olduğu için işe yaramaz. Bunun yerine hesabı silip aynı kullanıcı adıyla yeniden aç; yeni UID'yi `ogrenciler`'e ekle, eskisini sil. Puanlar UID'ye bağlı olduğundan o haftanın puanı yeni hesaba geçmez.
+
+### Bir satırı silmek
+
+Firestore Database > Data > `haftalar` > `hafta-10` > `skorlar` > satırı seç > üç nokta > Delete document. Hesabı kapatmak için Authentication > Users > Disable account.
+
+`apiKey` gizli değildir; web sitelerinde herkese açık durur. Kimin ne yapabileceğini kurallar belirler.
 
 ## Dosyalar
 

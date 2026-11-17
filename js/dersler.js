@@ -21,13 +21,13 @@
      medd     Arapça kelimede hangi med var oyunu
      baglanti başka bir sayfaya düğme
 
-   Sunucuya sadece çocuk Zor yarışın sonunda "Puanı gönder"e basarsa isim ve puan gider (js/tablo.js).
+   Sunucu (js/tablo.js): Zor yarış hocanın açtığı hesaplarla oynanır, günde bir hak; puan tabloya kendiliğinden yazılır.
    Bu cihazda saklananlar (hiçbiri dışarı gönderilmez):
      dersler-yildiz   oyunlardan kazanılan yıldızlar
      dersler-isaret   kalemle yapılan renkli işaretler
      dersler-kalem    son seçilen kalem rengi
      dersler-yaris    sınıf yarışı isimleri ve en iyi puanlar
-     dersler-ad       Zor yarışta en son yazılan isim
+     dersler-hesap    Zor yarış oturumu (çıkış yapınca silinir)
    ============================================================ */
 
 window.DERS = {
@@ -575,7 +575,7 @@ window.DERS = {
       var zorVar = !!(h.zor && h.zor.length && window.TABLO);
       govde.innerHTML = '<div class="yaris"><h1>Wedstrijd van week ' + esc(h.no) + '<span class="tr" lang="tr"> · ' + esc(h.no) + '. hafta yarışı</span></h1>' +
         (zorVar ? '<a class="zor-kart" href="#/' + esc(h.id) + '/zor"><span class="zor-yazi"><b>Moeilijke wedstrijd<small class="tr" lang="tr">Zor yarış</small></b>' +
-          '<span>' + ZOR.tur + ' moeilijke vragen, alleen op je eigen telefoon. Zet je naam op het scorebord!<small class="tr" lang="tr">' + ZOR.tur + ' zor soru, tek başına, kendi telefonunda. İsmini tabloya yazdır!</small></span></span><span class="ok" aria-hidden="true">›</span></a>' + tabloKutusu() +
+          '<span>' + ZOR.tur + ' moeilijke vragen, elke dag één kans. Log in en zet je naam op het scorebord!<small class="tr" lang="tr">' + ZOR.tur + ' zor soru, her gün bir hak. Giriş yap, ismini tabloya yazdır!</small></span></span><span class="ok" aria-hidden="true">›</span></a>' + tabloKutusu() +
           '<h2 class="alt-baslik">Klaswedstrijd<span class="tr" lang="tr"> · Sınıf yarışı</span></h2>' : '') +
         '<p class="giris">Iedereen krijgt ' + YARIS.tur + ' vragen en ' + YARIS.sure + ' seconden per vraag. Goed is ' + YARIS.puan + ' punten, snel antwoorden geeft tot ' + YARIS.hiz + ' extra. ' +
         '<span class="tr" lang="tr">Herkese ' + YARIS.tur + ' soru, her soruya ' + YARIS.sure + ' saniye. Doğru cevap ' + YARIS.puan + ' puan, hızlı cevap ' + YARIS.hiz + ' puana kadar ek puan.</span></p>' +
@@ -758,57 +758,134 @@ window.DERS = {
     });
   }
 
+  // Havuzdan her konudan eşit sayıda rastgele soru seçer (40 soru, 4 konu -> her konudan 5).
+  function zorSec(havuz, adet) {
+    var gruplar = {}, konular = [], l = [], i = 0;
+    karistir(havuz).forEach(function (z) { if (!gruplar[z.konu]) { gruplar[z.konu] = []; konular.push(z.konu); } gruplar[z.konu].push(z); });
+    adet = Math.min(adet, havuz.length);
+    while (l.length < adet) { var g = gruplar[konular[i++ % konular.length]]; if (g.length) l.push(g.shift()); }
+    return karistir(l);
+  }
+
   function zorSayfasi(h) {
-    var havuz = h.zor || [], sorular = [], sira = 0, puan = 0, dogru = 0, ad = '', sayac = null;
+    var T = window.TABLO, havuz = h.zor || [], adet = Math.min(ZOR.tur, havuz.length);
+    var ogr = null, onceki = null;                       // öğrenci { uid, ad } ve haftalık durumu
+    var sorular = [], kacan = [], sira = 0, puan = 0, dogru = 0, sayac = null;
     document.title = 'Moeilijke wedstrijd week ' + h.no + ' · Ahi Evran Camii';
     ust.className = 'ust';
     ust.innerHTML = '<div class="kap"><a class="geri" href="#/' + esc(h.id) + '/yaris">‹ Wedstrijd<span class="tr" lang="tr"> · Yarış</span></a>' +
       '<span class="marka kucuk">Zor yarış<span class="tr" lang="tr"> · Moeilijk</span></span></div>';
     temizlik.push(function () { clearInterval(sayac); });
-    if (!havuz.length || !window.TABLO) { govde.innerHTML = '<p class="giris">Deze wedstrijd is er nog niet. <span class="tr" lang="tr">Bu yarış henüz hazır değil.</span></p>'; return; }
-    kurulum();
+    if (!havuz.length || !T) { govde.innerHTML = '<p class="giris">Deze wedstrijd is er nog niet. <span class="tr" lang="tr">Bu yarış henüz hazır değil.</span></p>'; return; }
+    if (T.hesap()) yukle(); else girisEkrani();
 
-    function kurulum(uyari) {
-      var son = '';
-      try { son = localStorage.getItem('dersler-ad') || ''; } catch (e) {}
-      govde.innerHTML = '<div class="yaris"><h1>Moeilijke wedstrijd<span class="tr" lang="tr"> · Zor yarış</span></h1>' +
-        '<p class="giris">' + ZOR.tur + ' moeilijke vragen over week ' + esc(h.no) + ', ' + ZOR.sure + ' seconden per vraag. Goed is ' + ZOR.puan + ' punten, snel antwoorden geeft tot ' + ZOR.hiz + ' extra. Je speelt alleen, op je eigen telefoon. ' +
-        '<span class="tr" lang="tr">' + esc(h.no) + '. haftadan ' + ZOR.tur + ' zor soru, her soruya ' + ZOR.sure + ' saniye. Doğru cevap ' + ZOR.puan + ' puan, hızlı cevap ' + ZOR.hiz + ' puana kadar ek puan. Tek başına, kendi telefonunda oynarsın.</span></p>' +
-        '<section class="blok"><form class="isim-form"><label for="zor-isim">Je voornaam<span class="tr" lang="tr"> · Ön adın</span></label>' +
-        '<div class="isim-satir"><input id="zor-isim" type="text" maxlength="14" autocomplete="off" autocapitalize="words" enterkeyhint="go" value="' + esc(son) + '">' +
-        '<button type="submit" class="dugme ana">Start<small>Başla</small></button></div>' +
-        '<p class="uyari" role="alert">' + (uyari || '') + '</p></form>' +
-        '<p class="not">Zijn er meer kinderen met dezelfde naam? Zet de eerste letter van je achternaam erbij, bijvoorbeeld “Ahmet K”. ' +
-        '<span class="tr" lang="tr">Aynı isimde başka çocuk varsa soyadının ilk harfini ekle, örneğin “Ahmet K”.</span></p>' +
-        '<p class="not gizlilik"><b>Jij kiest.</b> Pas als je aan het eind op “Verstuur” drukt, komen je naam en score op het openbare scorebord, voor iedereen die de site opent. Wil je dat niet? Druk dan niet op Verstuur. ' +
-        '<span class="tr" lang="tr"><b>Karar senin.</b> Sonunda “Gönder”e basarsan ismin ve puanın, siteyi açan herkesin görebileceği tabloya çıkar. İstemiyorsan Gönder’e basma.</span></p></section></div>';
-      var giris = govde.querySelector('#zor-isim');
-      govde.querySelector('.isim-form').addEventListener('submit', function (e) {
-        e.preventDefault();
-        var a = String(giris.value || '').replace(/\s+/g, ' ').trim().slice(0, 14);
-        if (!a) { kurulum('Vul je naam in. <span class="tr" lang="tr">İsmini yaz.</span>'); return; }
-        ad = a;
-        try { localStorage.setItem('dersler-ad', ad); } catch (x) {}
-        basla();
-      });
-      if (uyari !== undefined) govde.querySelector('#zor-isim').focus({ preventScroll: true });
+    // Sayfa iskeleti: başlık, değişen kısım, puan tablosu
+    function sayfa(ic) {
+      govde.innerHTML = '<div class="yaris"><h1>Moeilijke wedstrijd<span class="tr" lang="tr"> · Zor yarış</span></h1>' + ic + tabloKutusu() + '</div>';
+      tabloDoldur(govde, h, ogr ? ogr.uid : null, false);
+    }
+    function bekle() { sayfa('<section class="blok"><p class="sayac">Laden…<span class="tr" lang="tr"> · Yükleniyor…</span></p></section>'); }
+    function hataYazi(e) {
+      if (e && e.kod === 'AG') return 'Geen verbinding. Controleer je internet. <span class="tr" lang="tr">Bağlantı yok. İnternetini kontrol et.</span>';
+      return 'Er ging iets mis. Probeer het opnieuw. <span class="tr" lang="tr">Bir şeyler ters gitti. Tekrar dene.</span>';
     }
 
-    function basla() {
-      sorular = karistir(havuz); sira = 0; puan = 0; dogru = 0;
+    // ---------- 1. Giriş ----------
+    function girisEkrani(uyari) {
+      ogr = null;
+      sayfa('<p class="giris">' + adet + ' moeilijke vragen over week ' + esc(h.no) + '. Elke dag één kans. Log in met de gebruikersnaam en het wachtwoord van je leraar. ' +
+        '<span class="tr" lang="tr">' + esc(h.no) + '. haftadan ' + adet + ' zor soru, her gün bir hak. Hocanın verdiği kullanıcı adı ve şifreyle giriş yap.</span></p>' +
+        '<section class="blok"><h3>Inloggen<small class="tr" lang="tr">Giriş yap</small></h3><form class="giris-form" novalidate>' +
+        '<label for="kullanici">Gebruikersnaam<span class="tr" lang="tr"> · Kullanıcı adı</span></label>' +
+        '<input id="kullanici" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="40">' +
+        '<label for="sifre">Wachtwoord<span class="tr" lang="tr"> · Şifre</span></label>' +
+        '<input id="sifre" type="password" autocomplete="current-password" maxlength="100">' +
+        '<p class="uyari" role="alert">' + (uyari || '') + '</p>' +
+        '<button type="submit" class="dugme ana buyuk">Inloggen<small>Giriş yap</small></button></form>' +
+        '<p class="not">Wachtwoord vergeten? Vraag het aan je leraar. <span class="tr" lang="tr">Şifreni unuttuysan hocana sor.</span></p></section>');
+      var form = govde.querySelector('.giris-form');
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var k = form.querySelector('#kullanici').value, sf = form.querySelector('#sifre').value;
+        if (!k.trim() || !sf) { form.querySelector('.uyari').innerHTML = 'Vul je gebruikersnaam en wachtwoord in. <span class="tr" lang="tr">Kullanıcı adını ve şifreni yaz.</span>'; return; }
+        var d = form.querySelector('button'); d.disabled = true; d.innerHTML = 'Bezig…<small>Giriş yapılıyor…</small>';
+        T.girisYap(k, sf).then(yukle, function (x) {
+          var m = /TOO_MANY/.test(x.kod) ? 'Te vaak geprobeerd. Wacht even en probeer het later opnieuw. <span class="tr" lang="tr">Çok fazla deneme oldu. Biraz bekleyip tekrar dene.</span>'
+            : /DISABLED/.test(x.kod) ? 'Dit account is uitgezet. Vraag het aan je leraar. <span class="tr" lang="tr">Bu hesap kapatılmış. Hocana sor.</span>'
+            : x.kod === 'AG' ? hataYazi(x)
+            : /CONFIGURATION_NOT_FOUND|OPERATION_NOT_ALLOWED|API_KEY|PROJECT_NOT_FOUND/.test(x.kod) ? 'Inloggen is nog niet ingesteld. Vraag het aan je leraar. <span class="tr" lang="tr">Giriş henüz ayarlanmamış. Hocana söyle.</span>'
+            : 'Gebruikersnaam of wachtwoord klopt niet. <span class="tr" lang="tr">Kullanıcı adı ya da şifre yanlış.</span>';
+          girisEkrani(m);
+          govde.querySelector('#kullanici').value = k;
+          govde.querySelector('#sifre').focus({ preventScroll: true });
+        });
+      });
+      if (uyari === undefined) { var ilk = govde.querySelector('#kullanici'); if (ilk && !('ontouchstart' in window)) ilk.focus({ preventScroll: true }); }
+    }
+
+    // ---------- 2. Kim, bugün hakkı var mı? ----------
+    function yukle() {
+      bekle();
+      T.ogrenci().then(function (o) {
+        ogr = o;
+        return T.durum(h.id, o.uid);
+      }).then(function (d) { onceki = d; hazir(); }, function (e) {
+        if (e && e.kod === 'LISTEDE_YOK') {
+          sayfa('<section class="blok"><p class="uyari">Je account staat nog niet op de klassenlijst. Vraag het aan je leraar. <span class="tr" lang="tr">Hesabın henüz sınıf listesinde değil. Hocana söyle.</span></p>' +
+            '<button type="button" class="dugme kucuk cikis">Uitloggen<small>Çıkış</small></button></section>');
+          govde.querySelector('.cikis').addEventListener('click', function () { T.cikis(); girisEkrani(); });
+        } else if (!T.hesap()) girisEkrani('Log opnieuw in. <span class="tr" lang="tr">Tekrar giriş yap.</span>');
+        else {
+          sayfa('<section class="blok"><p class="uyari">' + hataYazi(e) + '</p><button type="button" class="dugme kucuk yeniden">Opnieuw proberen<small>Tekrar dene</small></button></section>');
+          govde.querySelector('.yeniden').addEventListener('click', yukle);
+        }
+      });
+    }
+    function saatYazi() { return T.yeniHak().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }); }
+    function hazir(uyari) {
+      var kim = '<div class="hesap-satir"><span>Ingelogd als <b>' + esc(ogr.ad) + '</b><span class="tr" lang="tr"> · <b>' + esc(ogr.ad) + '</b> olarak girdin</span></span>' +
+        '<button type="button" class="dugme kucuk cikis">Uitloggen<small>Çıkış</small></button></div>';
+      var enIyi = onceki.puan > 0 ? '<p class="en-iyi">Je beste score deze week: <b>' + onceki.puan + '</b><span class="tr" lang="tr"> · Bu haftaki en iyi puanın: <b>' + onceki.puan + '</b></span></p>' : '';
+      var ic = onceki.bugunOynadi
+        ? '<section class="blok">' + kim + enIyi + '<div class="geri-bildirim"><b>Je hebt vandaag al gespeeld · Bugünkü hakkını kullandın</b>' +
+            '<p>Morgen na ' + saatYazi() + ' mag je weer. Lees intussen de lessen nog eens door.</p><p class="tr" lang="tr">Yarın ' + saatYazi() + '’den sonra tekrar oynayabilirsin. Bu arada dersleri bir daha oku.</p></div>' +
+            '<div class="yaris-dugmeler"><a class="dugme" href="#/' + esc(h.id) + '">Naar de lessen<small>Derslere git</small></a></div></section>'
+        : '<section class="blok">' + kim + enIyi +
+            '<p>' + adet + ' moeilijke vragen, ' + ZOR.sure + ' seconden per vraag. Goed is ' + ZOR.puan + ' punten, snel antwoorden geeft tot ' + ZOR.hiz + ' extra. Het goede antwoord zie je niet: zoek het daarna op in de les.</p>' +
+            '<p class="tr" lang="tr">' + adet + ' zor soru, her soruya ' + ZOR.sure + ' saniye. Doğru cevap ' + ZOR.puan + ' puan, hızlı cevap ' + ZOR.hiz + ' puana kadar ek puan. Doğru cevap gösterilmez: sonra derste bul.</p>' +
+            '<p class="not gizlilik"><b>Eén kans per dag.</b> Je kans telt zodra je op Start drukt. Stop je halverwege, dan is je kans voor vandaag op. Je beste score van de week komt op het scorebord. ' +
+            '<span class="tr" lang="tr"><b>Günde bir hak.</b> Başla’ya bastığın an hakkın sayılır. Yarıda bırakırsan bugünkü hakkın gider. Haftanın en iyi puanın tabloya yazılır.</span></p>' +
+            '<p class="uyari" role="alert">' + (uyari || '') + '</p>' +
+            '<button type="button" class="dugme ana buyuk zor-basla">Start<small>Başla</small></button></section>';
+      sayfa(ic);
+      govde.querySelector('.cikis').addEventListener('click', function () { T.cikis(); girisEkrani(); });
+      var b = govde.querySelector('.zor-basla');
+      if (b) b.addEventListener('click', function () {
+        b.disabled = true; b.innerHTML = 'Bezig…<small>Hazırlanıyor…</small>';
+        T.basla(h.id, ogr, onceki).then(oyna, function (e) {
+          // Reddedildiyse büyük ihtimalle bugün başka bir cihazdan oynandı: durumu yeniden oku
+          T.durum(h.id, ogr.uid).then(function (d) { onceki = d; hazir(d.bugunOynadi ? undefined : hataYazi(e)); }, function () { hazir(hataYazi(e)); });
+        });
+      });
+    }
+
+    // ---------- 3. Oyun ----------
+    function oyna() {
+      sorular = zorSec(havuz, adet); kacan = []; sira = 0; puan = 0; dogru = 0;
       soru();
     }
     function soru() {
       var z = sorular[sira], bas = Date.now(), bitti = false;
       var konu = h.konular.filter(function (k) { return k.id === z.konu; })[0] || h.konular[0];
+      // Hangi şıkkın doğru olduğu sayfaya yazılmaz, sadece burada bilinir
       var secenekler = karistir(z.secenekler.map(function (x, i) { return { x: x, dogru: i === z.dogru }; }));
       govde.innerHTML = '<div class="yaris oyunda renk-' + esc(konu.renk) + '">' +
-        '<div class="yaris-ust"><div class="kim"><small>Speler<span class="tr" lang="tr"> · Oyuncu</span></small><b>' + esc(ad) + '</b></div>' +
-        '<div class="tur-no"><b>' + puan + '</b><small>Vraag ' + (sira + 1) + ' / ' + ZOR.tur + '<span class="tr" lang="tr"> · Soru ' + (sira + 1) + ' / ' + ZOR.tur + '</span></small></div></div>' +
+        '<div class="yaris-ust"><div class="kim"><small>Speler<span class="tr" lang="tr"> · Oyuncu</span></small><b>' + esc(ogr.ad) + '</b></div>' +
+        '<div class="tur-no"><b>' + puan + '</b><small>Vraag ' + (sira + 1) + ' / ' + sorular.length + '<span class="tr" lang="tr"> · Soru ' + (sira + 1) + ' / ' + sorular.length + '</span></small></div></div>' +
         '<div class="sure" role="timer" aria-label="Tijd · Süre"><div class="sure-yol"><div class="sure-cubuk"></div></div><span class="sure-sn">' + ZOR.sure + '</span></div>' +
         '<section class="blok oyun"><p class="konu-etiket">' + nl(konu.kisa) + '<span class="tr" lang="tr"> · ' + tr(konu.kisa) + '</span></p>' +
         '<div class="soru">' + iki(z.soru) + '</div><div class="secenekler">' +
-        secenekler.map(function (c) { return '<button type="button" class="secenek" data-d="' + (c.dogru ? 1 : 0) + '">' + ikiSatir(c.x) + '</button>'; }).join('') +
+        secenekler.map(function (c, i) { return '<button type="button" class="secenek" data-i="' + i + '">' + ikiSatir(c.x) + '</button>'; }).join('') +
         '</div><div class="sonuc" role="status"></div></section></div>';
       window.scrollTo(0, 0);
       var cubuk = govde.querySelector('.sure-cubuk'), sn = govde.querySelector('.sure-sn'), sureKutu = govde.querySelector('.sure');
@@ -827,59 +904,61 @@ window.DERS = {
         if (bitti) return;
         bitti = true;
         clearInterval(sayac);
-        var k = kalan(), iyi = !!d && d.dataset.d === '1';
+        var k = kalan(), iyi = !!d && secenekler[Number(d.dataset.i)].dogru;
         var kazanc = iyi ? ZOR.puan + Math.round(ZOR.hiz * k / ZOR.sure) : 0;
-        puan += kazanc; if (iyi) dogru++;
-        govde.querySelectorAll('.secenek').forEach(function (x) { x.disabled = true; if (x.dataset.d === '1') x.classList.add('dogru'); else if (x === d) x.classList.add('yanlis'); });
+        puan += kazanc; if (iyi) dogru++; else kacan.push(z);
+        // Doğru şık gösterilmez: sadece çocuğun seçtiği şık yeşil ya da kırmızı olur
+        govde.querySelectorAll('.secenek').forEach(function (x) { x.disabled = true; if (x === d) x.classList.add(iyi ? 'dogru' : 'yanlis'); });
         govde.querySelector('.tur-no b').textContent = puan;
         var son = sira + 1 >= sorular.length;
         govde.querySelector('.sonuc').innerHTML = '<div class="geri-bildirim ' + (iyi ? 'dogru' : 'yanlis') + '"><b>' +
-          (iyi ? '+' + kazanc + ' · Goed! · Doğru!' : d ? 'Helaas! · Olmadı!' : 'Tijd is om! · Süre doldu!') + '</b>' + (z.aciklama ? iki(z.aciklama) : '') + '</div>' +
+          (iyi ? '+' + kazanc + ' · Goed! · Doğru!' : d ? 'Helaas! · Olmadı!' : 'Tijd is om! · Süre doldu!') + '</b>' +
+          (iyi ? '' : '<p>Het goede antwoord zie je niet. Zoek het na de wedstrijd op in de les.</p><p class="tr" lang="tr">Doğru cevap gösterilmez. Yarıştan sonra derste bul.</p>') + '</div>' +
           '<button type="button" class="dugme ana buyuk sonraki">' + (son ? 'Uitslag<small>Sonuç</small>' : 'Volgende<small>Sonraki</small>') + '</button>';
         var dugme = govde.querySelector('.sonraki');
-        dugme.addEventListener('click', function () { sira++; if (son) sonuc(); else soru(); });
+        dugme.addEventListener('click', function () { sira++; if (son) kaydet(); else soru(); });
         dugme.focus({ preventScroll: true });
         dugme.scrollIntoView({ block: 'nearest' });
       }
     }
 
-    function sonuc() {
-      var benimId = window.TABLO.kimlik(ad);
-      govde.innerHTML = '<div class="yaris sonuc-ekrani"><div class="kazanan"><p class="sayac">' + esc(ad) + '</p><p class="kim-buyuk">' + puan + '</p>' +
-        '<p class="hazir-yazi">' + dogru + ' / ' + ZOR.tur + ' goed<span class="tr" lang="tr">' + dogru + ' / ' + ZOR.tur + ' doğru</span></p></div>' +
-        '<section class="blok gonder-kutu">' +
-        (dogru > 0
-          ? '<p class="not gizlilik">Als je op Verstuur drukt, komen je naam (<b>' + esc(ad) + '</b>) en je score op het openbare scorebord. ' +
-            '<span class="tr" lang="tr">Gönder’e basarsan ismin (<b>' + esc(ad) + '</b>) ve puanın herkese açık tabloya çıkar.</span></p>' +
-            '<div class="gonder-yer"><button type="button" class="dugme ana buyuk gonder">Verstuur naar het scorebord<small>Puan tablosuna gönder</small></button></div>'
-          : '<p class="sayac">Nog geen goede antwoorden. Probeer het opnieuw!<span class="tr" lang="tr"> · Henüz doğru cevap yok. Tekrar dene!</span></p>') +
-        '<div class="yaris-dugmeler"><button type="button" class="dugme tekrar-oyna">Nog een keer<small>Tekrar oyna</small></button>' +
-        '<a class="dugme" href="#/' + esc(h.id) + '/yaris">Naar het scorebord<small>Tabloya git</small></a></div></section>' + tabloKutusu() + '</div>';
+    // ---------- 4. Kaydet ve sonuç ----------
+    function kaydet(hata) {
+      govde.innerHTML = '<div class="yaris sonuc-ekrani"><div class="kazanan"><p class="sayac">' + esc(ogr.ad) + '</p><p class="kim-buyuk">' + puan + '</p>' +
+        '<p class="hazir-yazi">' + dogru + ' / ' + sorular.length + ' goed<span class="tr" lang="tr">' + dogru + ' / ' + sorular.length + ' doğru</span></p></div>' +
+        '<section class="blok kayit">' + (hata
+          ? '<p class="uyari">Opslaan is niet gelukt. ' + hataYazi(hata) + '</p><button type="button" class="dugme ana buyuk yeniden">Opnieuw opslaan<small>Tekrar kaydet</small></button>'
+          : '<p class="sayac">Opslaan…<span class="tr" lang="tr"> · Kaydediliyor…</span></p>') + '</section></div>';
       window.scrollTo(0, 0);
-      var kutu = govde.querySelector('.gonder-kutu');
-      govde.querySelector('.tekrar-oyna').addEventListener('click', basla);
-      var g = govde.querySelector('.gonder');
-      if (g) g.addEventListener('click', gonder);
-      tabloDoldur(govde, h, benimId, false);
+      if (hata) { govde.querySelector('.yeniden').addEventListener('click', function () { kaydet(); }); return; }
+      T.bitir(h.id, ogr, onceki, puan, dogru).then(sonuc, function (e) {
+        // 403: süre aşıldı ya da deneme zaten kapandı; tekrar denemek işe yaramaz
+        if (e && e.durum === 403) sonuc(null); else kaydet(e);
+      });
+    }
+    function sonuc(r) {
+      var mesaj = !r
+        ? '<div class="geri-bildirim yanlis"><b>Niet opgeslagen · Kaydedilemedi</b><p>Deze ronde duurde te lang of was al afgesloten.</p><p class="tr" lang="tr">Bu tur çok uzun sürdü ya da zaten kapanmıştı.</p></div>'
+        : r.rekor
+          ? '<div class="geri-bildirim dogru"><b>Opgeslagen! Je beste score van deze week · Kaydedildi! Bu haftaki en iyi puanın</b><p>Je staat op het scorebord.</p><p class="tr" lang="tr">Tablodasın.</p></div>'
+          : '<div class="geri-bildirim"><b>Opgeslagen · Kaydedildi</b><p>Je beste score deze week blijft ' + r.enIyi + '.</p><p class="tr" lang="tr">Bu haftaki en iyi puanın ' + r.enIyi + ' olarak kalıyor.</p></div>';
+      var kutu = govde.querySelector('.kayit');
+      kutu.innerHTML = mesaj + '<p class="not">Morgen na ' + saatYazi() + ' mag je weer. <span class="tr" lang="tr">Yarın ' + saatYazi() + '’den sonra tekrar oynayabilirsin.</span></p>' +
+        '<div class="yaris-dugmeler"><a class="dugme" href="#/' + esc(h.id) + '">Naar de lessen<small>Derslere git</small></a></div>';
+      kutu.insertAdjacentHTML('afterend', kacanlar() + tabloKutusu());
+      tabloDoldur(govde, h, ogr.uid, true);
+    }
 
-      function gonder() {
-        var yer = kutu.querySelector('.gonder-yer');
-        yer.innerHTML = '<p class="sayac">Bezig met versturen…<span class="tr" lang="tr"> · Gönderiliyor…</span></p>';
-        window.TABLO.gonder(h.id, ad, puan, dogru).then(function (r) {
-          if (!yer.isConnected) return;
-          var not = kutu.querySelector('.gizlilik'); if (not) not.remove();
-          yer.innerHTML = r.durum === 'yazildi'
-            ? '<div class="geri-bildirim dogru"><b>Verstuurd! · Gönderildi!</b><p>Je staat op het scorebord.</p><p class="tr" lang="tr">Tablodasın.</p></div>'
-            : '<div class="geri-bildirim"><b>Je beste score staat er al · En iyi puanın zaten tabloda</b><p>Daar staat ' + r.eski + '. Die blijft staan.</p><p class="tr" lang="tr">Tabloda ' + r.eski + ' puanın var, o kalıyor.</p></div>';
-          tabloDoldur(govde, h, benimId, true);
-          var t = govde.querySelector('[data-tablo]'); if (t) t.scrollIntoView({ block: 'start', behavior: azHareket ? 'auto' : 'smooth' });
-        }, function () {
-          if (!yer.isConnected) return;
-          yer.innerHTML = '<p class="uyari">Versturen is niet gelukt. Controleer je internet en probeer opnieuw.<span class="tr" lang="tr"> · Gönderilemedi. İnternetini kontrol edip tekrar dene.</span></p>' +
-            '<button type="button" class="dugme ana buyuk gonder">Opnieuw versturen<small>Tekrar gönder</small></button>';
-          yer.querySelector('.gonder').addEventListener('click', gonder);
-        });
-      }
+    // Bilemediği sorular, cevapsız. Her sorunun yanında cevabı bulacağı konu.
+    function kacanlar() {
+      if (!kacan.length) return '<section class="blok kacan"><h3>Alles goed!<small class="tr" lang="tr">Hepsi doğru!</small></h3></section>';
+      return '<section class="blok kacan"><h3>Deze vragen had je niet goed<small class="tr" lang="tr">Bu soruları bilemedin</small></h3>' +
+        '<p class="not">Zoek het antwoord op in de les. <span class="tr" lang="tr">Cevabı derste bul.</span></p><ol class="kacan-liste">' +
+        kacan.map(function (z) {
+          var k = h.konular.filter(function (x) { return x.id === z.konu; })[0] || h.konular[0];
+          return '<li class="renk-' + esc(k.renk) + '"><div class="soru">' + iki(z.soru) + '</div>' +
+            '<a class="kacan-git" href="#/' + esc(h.id) + '/' + esc(k.id) + '">Zoek op: ' + nl(k.kisa) + '<small>Derste bul: ' + tr(k.kisa) + '</small></a></li>';
+        }).join('') + '</ol></section>';
     }
   }
 

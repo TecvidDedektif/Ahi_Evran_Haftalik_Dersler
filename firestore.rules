@@ -1,37 +1,68 @@
 // Firebase panelinde: Build > Firestore Database > Rules sekmesine yapıştır, Publish de.
 //
 // Ne yapar:
-//   - Herkes puan tablosunu okuyabilir.
-//   - Herkes yeni bir satır ekleyebilir (isim 1-14 harf, puan ve doğru sayısı tutarlı olmalı).
-//   - Var olan satır sadece aynı isimle ve DAHA YÜKSEK puanla güncellenebilir.
-//   - Kimse satır silemez. Silmek istediğinde Firebase panelinden elle silersin.
-//   - Bu yolun dışında hiçbir şey okunamaz ya da yazılamaz.
-//
-// Puan: her doğru cevap 100 puan, hız için en fazla 50 ek puan (soru başına).
-// Yani puan, doğru sayısı x 100 ile doğru sayısı x 150 arasında olmalı. En çok 20 soru var.
+//   - Puan tablosuna herkes bakabilir.
+//   - Puanı sadece hesabı olan ve "ogrenciler" listesinde bulunan çocuk yazabilir,
+//     sadece kendi satırına, listedeki kendi ismiyle.
+//   - Günde bir hak: yarış başlarken deneme sayılır, aynı gün ikinci başlangıç reddedilir.
+//     Gün sunucu saatine (UTC) göre değişir: Hollanda'da kışın 01:00, yazın 02:00.
+//   - Yarış bitince puan sadece yükselebilir. Bitiş, başlangıçtan en geç 20 dakika sonra olmalı.
+//   - Puan doğru sayısıyla tutarlı olmalı: her doğru 100 puan, hız için en fazla 50 ek puan.
+//   - Kimse silemez; silmeyi hoca Firebase panelinden yapar.
+//   - "ogrenciler" listesini çocuklar okuyamaz, sadece kendi satırlarını görür.
 
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    match /haftalar/{hafta}/skorlar/{kayit} {
+    function listede(uid) {
+      return exists(/databases/$(database)/documents/ogrenciler/$(uid));
+    }
+    function listedekiAd(uid) {
+      return get(/databases/$(database)/documents/ogrenciler/$(uid)).data.ad;
+    }
 
-      function gecerli() {
+    match /ogrenciler/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+    }
+
+    match /haftalar/{hafta}/skorlar/{uid} {
+      allow read: if true;
+
+      function sahibi() {
+        return request.auth != null && request.auth.uid == uid
+          && hafta.matches('hafta-[0-9]+') && listede(uid);
+      }
+      function sekil() {
         let d = request.resource.data;
-        return hafta.matches('hafta-[0-9]+')
-          && kayit.size() >= 1 && kayit.size() <= 40
-          && d.keys().hasOnly(['ad', 'puan', 'dogru'])
-          && d.keys().hasAll(['ad', 'puan', 'dogru'])
-          && d.ad is string && d.ad.size() >= 1 && d.ad.size() <= 14
+        return d.keys().hasOnly(['ad', 'puan', 'dogru', 'son', 'acik', 'deneme'])
+          && d.keys().hasAll(['ad', 'puan', 'dogru', 'son', 'acik', 'deneme'])
+          && d.ad == listedekiAd(uid)
           && d.dogru is int && d.dogru >= 0 && d.dogru <= 20
-          && d.puan is int && d.puan >= d.dogru * 100 && d.puan <= d.dogru * 150;
+          && d.puan is int && d.puan >= d.dogru * 100 && d.puan <= d.dogru * 150
+          && d.son is timestamp && d.acik is bool && d.deneme is int;
+      }
+      // Yarış başlıyor: bugün daha oynanmamış olmalı, puan değişmez
+      function basliyor() {
+        let d = request.resource.data;
+        return d.acik == true && d.son == request.time
+          && (resource == null
+                ? d.puan == 0 && d.dogru == 0 && d.deneme == 1
+                : resource.data.son.date() != request.time.date()
+                  && d.puan == resource.data.puan && d.dogru == resource.data.dogru
+                  && d.deneme == resource.data.deneme + 1);
+      }
+      // Yarış bitiyor: açık deneme kapanır, puan sadece yükselebilir
+      function bitiyor() {
+        let d = request.resource.data;
+        return resource != null && resource.data.acik == true && d.acik == false
+          && d.son == resource.data.son && d.deneme == resource.data.deneme
+          && request.time < resource.data.son + duration.value(20, 'm')
+          && d.puan >= resource.data.puan;
       }
 
-      allow read: if true;
-      allow create: if gecerli();
-      allow update: if gecerli()
-        && request.resource.data.ad == resource.data.ad
-        && request.resource.data.puan > resource.data.puan;
+      allow create: if sahibi() && sekil() && basliyor();
+      allow update: if sahibi() && sekil() && (basliyor() || bitiyor());
       allow delete: if false;
     }
   }
