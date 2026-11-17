@@ -261,6 +261,7 @@ window.DERS = {
         d.addEventListener('click', function () {
           var iyi = d.dataset.d === '1';
           if (iyi) dogru++;
+          if (window.SES) SES.cal(iyi ? 'dogru' : 'yanlis');
           ic.querySelectorAll('.secenek').forEach(function (x) { x.disabled = true; if (x.dataset.d === '1') x.classList.add('dogru'); else if (x === d) x.classList.add('yanlis'); });
           ic.querySelector('.sonuc').innerHTML = '<div class="geri-bildirim ' + (iyi ? 'dogru' : 'yanlis') + '"><b>' + (iyi ? 'Goed! · Doğru!' : 'Bijna! · Neredeyse!') + '</b>' +
             (s.aciklama ? iki(s.aciklama) : '') + '</div><button type="button" class="dugme ana sonraki">' +
@@ -274,6 +275,7 @@ window.DERS = {
     function bitis() {
       var y = puandanYildiz(dogru, sorular.length);
       yildizVer(yer.hafta, yer.konu + ':' + yer.bi, y);
+      if (window.SES) SES.cal(y === 3 ? 'rekor' : 'bitis');
       ic.innerHTML = '<div class="bitis"><div class="puan">' + dogru + ' / ' + sorular.length + '</div>' + yildizCiz(y) +
         '<p>' + (y === 3 ? 'Alles goed! · <span class="tr" lang="tr">Hepsi doğru!</span>' : y >= 1 ? 'Goed bezig! · <span class="tr" lang="tr">Güzel gidiyorsun!</span>' : 'Lees het nog eens en probeer opnieuw. · <span class="tr" lang="tr">Bir daha oku ve tekrar dene.</span>') + '</p>' +
         '<button type="button" class="dugme ana tekrar">Opnieuw<small>Tekrar</small></button></div>';
@@ -307,9 +309,10 @@ window.DERS = {
             li.innerHTML = '<span class="ar" lang="ar">' + esc(b.ayetler[sira].ar) + '</span><small>' + esc(b.ayetler[sira].okunus) + '</small>';
             ic.querySelector('.dizilen').appendChild(li);
             d.remove(); sira++;
-            if (sira === b.ayetler.length) bitis();
+            if (sira === b.ayetler.length) bitis(); else if (window.SES) SES.cal('adim');
           } else {
             hata++;
+            if (window.SES) SES.cal('yanlis');
             d.classList.add('yanlis');
             setTimeout(function () { d.classList.remove('yanlis'); }, 500);
           }
@@ -319,6 +322,7 @@ window.DERS = {
     function bitis() {
       var y = hata === 0 ? 3 : hata <= 2 ? 2 : 1;
       yildizVer(yer.hafta, yer.konu + ':' + yer.bi, y);
+      if (window.SES) SES.cal(y === 3 ? 'rekor' : 'bitis');
       ic.querySelector('.ayet-secenekler').remove();
       ic.querySelector('.sonuc').innerHTML = '<div class="bitis">' + yildizCiz(y) + '<p>' +
         (hata === 0 ? 'Zonder fout! · <span class="tr" lang="tr">Hatasız!</span>' : hata + ' keer mis. · <span class="tr" lang="tr">' + hata + ' yanlış.</span>') +
@@ -357,6 +361,7 @@ window.DERS = {
         d.addEventListener('click', function () {
           var iyi = d.dataset.t === k.tur;
           if (iyi) dogru++;
+          if (window.SES) SES.cal(iyi ? 'dogru' : 'yanlis');
           ic.querySelectorAll('.secenek').forEach(function (x) { x.disabled = true; if (x.dataset.t === k.tur) x.classList.add('dogru'); else if (x === d) x.classList.add('yanlis'); });
           ic.querySelector('.kelime-yer').innerHTML = kelimeCiz(k.yazi, true, MEDD[k.tur].kopru);
           ic.querySelector('.sonuc').innerHTML = '<div class="geri-bildirim ' + (iyi ? 'dogru' : 'yanlis') + '"><b>' + (iyi ? 'Goed! · Doğru!' : 'Bijna! · Neredeyse!') + '</b>' +
@@ -371,6 +376,7 @@ window.DERS = {
     function bitis() {
       var y = puandanYildiz(dogru, liste.length);
       yildizVer(yer.hafta, yer.konu + ':' + yer.bi, y);
+      if (window.SES) SES.cal(y === 3 ? 'rekor' : 'bitis');
       ic.innerHTML = '<div class="bitis"><div class="puan">' + dogru + ' / ' + liste.length + '</div>' + yildizCiz(y) +
         '<button type="button" class="dugme ana tekrar">Opnieuw<small>Tekrar</small></button></div>';
       ic.querySelector('.tekrar').addEventListener('click', basla);
@@ -563,8 +569,8 @@ window.DERS = {
     var havuz = yarisSorulari(h), oyuncular = [], sorular = [], sira = 0, sayac = null;
     document.title = 'Wedstrijd week ' + h.no + ' · Ahi Evran Camii';
     ust.className = 'ust';
-    ust.innerHTML = '<div class="kap"><a class="geri" href="#/' + esc(h.id) + '">‹ Week ' + esc(h.no) + '<span class="tr" lang="tr"> · ' + esc(h.no) + '. hafta</span></a>' +
-      '<span class="marka kucuk">Wedstrijd<span class="tr" lang="tr"> · Yarış</span></span></div>';
+    ust.innerHTML = '<div class="kap"><a class="geri" href="#/' + esc(h.id) + '">‹ Week ' + esc(h.no) + '<small class="tr" lang="tr">' + esc(h.no) + '. hafta</small></a>' +
+      '<span class="marka kucuk">Wedstrijd<small class="tr" lang="tr">Yarış</small></span></div>';
     temizlik.push(function () { clearInterval(sayac); });
     if (!havuz.length) { govde.innerHTML = '<p class="giris">Deze week heeft nog geen vragen. <span class="tr" lang="tr">Bu haftanın henüz sorusu yok.</span></p>'; return; }
     kurulum();
@@ -660,11 +666,13 @@ window.DERS = {
       var cubuk = govde.querySelector('.sure-cubuk'), sn = govde.querySelector('.sure-sn'), sureKutu = govde.querySelector('.sure');
       function kalan() { return Math.max(0, YARIS.sure - (Date.now() - bas) / 1000); }
       clearInterval(sayac);
+      var tiktak = window.SES ? SES.sayac() : function () {};
       sayac = setInterval(function () {
         var k = kalan();
         cubuk.style.transform = 'scaleX(' + (k / YARIS.sure) + ')';
         sn.textContent = Math.ceil(k);
         sureKutu.classList.toggle('az', k <= 5);
+        tiktak(k);
         if (k <= 0) cevap(null);
       }, 100);
       govde.querySelectorAll('.secenek').forEach(function (d) { d.addEventListener('click', function () { cevap(d); }); });
@@ -675,6 +683,7 @@ window.DERS = {
         clearInterval(sayac);
         var k = kalan();
         var iyi = !!d && (s.medd ? d.dataset.t === s.medd.tur : d.dataset.d === '1');
+        if (window.SES) SES.cal(iyi ? 'dogru' : d ? 'yanlis' : 'sure');
         var kazanc = iyi ? YARIS.puan + Math.round(YARIS.hiz * k / YARIS.sure) : 0;
         o.puan += kazanc; if (iyi) o.dogru++;
         govde.querySelectorAll('.secenek').forEach(function (x) {
@@ -700,6 +709,7 @@ window.DERS = {
 
     // ---------- 3. Sonuç ----------
     function sonuc() {
+      if (window.SES) SES.cal('rekor');
       var l = oyuncular.slice().sort(function (a, b) { return b.puan - a.puan || b.dogru - a.dogru; });
       var skor = yarisKayit.skor[h.id] || (yarisKayit.skor[h.id] = {});
       var rekor = false;
@@ -773,8 +783,8 @@ window.DERS = {
     var sorular = [], kacan = [], sira = 0, puan = 0, dogru = 0, sayac = null;
     document.title = 'Moeilijke wedstrijd week ' + h.no + ' · Ahi Evran Camii';
     ust.className = 'ust';
-    ust.innerHTML = '<div class="kap"><a class="geri" href="#/' + esc(h.id) + '/yaris">‹ Wedstrijd<span class="tr" lang="tr"> · Yarış</span></a>' +
-      '<span class="marka kucuk">Zor yarış<span class="tr" lang="tr"> · Moeilijk</span></span></div>';
+    ust.innerHTML = '<div class="kap"><a class="geri" href="#/' + esc(h.id) + '/yaris">‹ Wedstrijd<small class="tr" lang="tr">Yarış</small></a>' +
+      '<span class="marka kucuk">Moeilijk<small class="tr" lang="tr">Zor yarış</small></span></div>';
     temizlik.push(function () { clearInterval(sayac); });
     if (!havuz.length || !T) { govde.innerHTML = '<p class="giris">Deze wedstrijd is er nog niet. <span class="tr" lang="tr">Bu yarış henüz hazır değil.</span></p>'; return; }
     if (T.hesap()) yukle(); else girisEkrani();
@@ -891,11 +901,13 @@ window.DERS = {
       var cubuk = govde.querySelector('.sure-cubuk'), sn = govde.querySelector('.sure-sn'), sureKutu = govde.querySelector('.sure');
       function kalan() { return Math.max(0, ZOR.sure - (Date.now() - bas) / 1000); }
       clearInterval(sayac);
+      var tiktak = window.SES ? SES.sayac() : function () {};
       sayac = setInterval(function () {
         var k = kalan();
         cubuk.style.transform = 'scaleX(' + (k / ZOR.sure) + ')';
         sn.textContent = Math.ceil(k);
         sureKutu.classList.toggle('az', k <= 5);
+        tiktak(k);
         if (k <= 0) cevap(null);
       }, 100);
       govde.querySelectorAll('.secenek').forEach(function (d) { d.addEventListener('click', function () { cevap(d); }); });
@@ -905,6 +917,7 @@ window.DERS = {
         bitti = true;
         clearInterval(sayac);
         var k = kalan(), iyi = !!d && secenekler[Number(d.dataset.i)].dogru;
+        if (window.SES) SES.cal(iyi ? 'dogru' : d ? 'yanlis' : 'sure');
         var kazanc = iyi ? ZOR.puan + Math.round(ZOR.hiz * k / ZOR.sure) : 0;
         puan += kazanc; if (iyi) dogru++; else kacan.push(z);
         // Doğru şık gösterilmez: sadece çocuğun seçtiği şık yeşil ya da kırmızı olur
@@ -937,6 +950,7 @@ window.DERS = {
       });
     }
     function sonuc(r) {
+      if (window.SES) SES.cal(r && r.rekor ? 'rekor' : 'bitis');
       var mesaj = !r
         ? '<div class="geri-bildirim yanlis"><b>Niet opgeslagen · Kaydedilemedi</b><p>Deze ronde duurde te lang of was al afgesloten.</p><p class="tr" lang="tr">Bu tur çok uzun sürdü ya da zaten kapanmıştı.</p></div>'
         : r.rekor
@@ -995,8 +1009,8 @@ window.DERS = {
     acik = { hafta: h.id, konu: konu.id };
     document.title = 'Week ' + h.no + ' · Ahi Evran Camii';
     ust.className = 'ust';
-    ust.innerHTML = '<div class="kap"><a class="geri" href="#/">‹ Alle weken<span class="tr" lang="tr"> · Tüm haftalar</span></a>' +
-      '<span class="marka kucuk">Week ' + esc(h.no) + '<span class="tr" lang="tr"> · ' + esc(h.no) + '. hafta</span></span></div>';
+    ust.innerHTML = '<div class="kap"><a class="geri" href="#/">‹ Alle weken<small class="tr" lang="tr">Tüm haftalar</small></a>' +
+      '<span class="marka kucuk">Week ' + esc(h.no) + '<small class="tr" lang="tr">' + esc(h.no) + '. hafta</small></span></div>';
     var sekmeler = h.konular.map(function (k) {
       return '<a class="sekme renk-' + esc(k.renk) + '" href="#/' + esc(h.id) + '/' + esc(k.id) + '"' + (k === konu ? ' aria-current="page"' : '') + '>' +
         nl(k.kisa) + '<small lang="tr">' + tr(k.kisa) + '</small></a>';
@@ -1033,6 +1047,8 @@ window.DERS = {
     else if (p[2] === 'yaris') { acik = null; kalemGoster(false); yarisSayfasi(h); }
     else if (p[2] === 'zor') { acik = null; kalemGoster(false); zorSayfasi(h); }
     else haftaSayfasi(h, p[2]);
+    var kap = ust.querySelector('.kap');
+    if (kap && window.SES) kap.appendChild(SES.dugme());
     window.scrollTo(0, 0);
   }
   window.addEventListener('hashchange', yonlendir);

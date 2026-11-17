@@ -58,6 +58,18 @@ main { padding-top:22px; padding-bottom:96px; min-height:70vh }
 
 /* Ana sayfada koyu cami şeridi */
 .ust.bant { background:var(--bant); color:var(--bant-yazi); border-bottom:0 }
+/* Üst şerit tek satır: geri bağlantısı, sayfa adı, hoparlör. Yazılar sığmazsa kendi içinde alt satıra geçer. */
+.ust .kap { flex-wrap:nowrap; align-items:center }
+.ust .geri { flex:1 1 auto; min-width:0 }
+.ust .marka.kucuk { flex:0 1 auto; min-width:0; text-align:right }
+.ust .geri small, .ust .marka.kucuk small { display:block; font-size:.78em; font-weight:600; margin-top:1px }   /* Türkçesi altında */
+.ses-d { width:40px; height:40px; flex:none; align-self:center; display:grid; place-items:center; padding:0; border:1.5px solid var(--cizgi); border-radius:50%; background:transparent; color:var(--metin); cursor:pointer }
+.ses-d .carpi { display:none }
+.ses-d.kapali { color:var(--soluk) }
+.ses-d.kapali .dalga { display:none }
+.ses-d.kapali .carpi { display:inline }
+.ust.bant .ses-d { margin-left:auto; color:var(--bant-yazi); border-color:var(--bant-soluk) }
+.ust.bant .ses-d.kapali { color:var(--bant-soluk) }
 .ust.bant .kap { padding-top:calc(18px + env(safe-area-inset-top,0px)); padding-bottom:18px }
 .ust.bant .marka { display:flex; align-items:center; gap:14px; font-size:clamp(26px,7.4vw,36px) }
 .ust.bant .marka small { display:block; font-family:var(--f); font-weight:600; font-size:15px; color:var(--bant-soluk); margin-top:4px }

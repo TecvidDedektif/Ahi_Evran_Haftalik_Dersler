@@ -10,6 +10,7 @@ Adres (Pages açıldıktan sonra): https://tecviddedektif.github.io/Ahi_Evran_Ha
 - **İşaret kalemi:** konu sayfalarında sağ alttaki "Stift · Kalem" düğmesi. Dört renk ve silgi var. Kelimeye dokununca ya da parmak cümlenin üstünden yana kaydırılınca işaretlenir.
 - **Zor yarış ve puan tablosu:** 40 zor sorudan her oyunda 20'si (her konudan 5), soru başına 30 saniye. Doğru cevap gösterilmez; sonda bilinemeyen sorular, cevabın bulunacağı konuya bağlantıyla listelenir. Hocanın açtığı hesapla giriş yapılır, günde bir hak vardır, haftanın en iyi puanı ortak tabloya yazılır.
 - **Sınıf yarışı:** haftanın sorularıyla isimli yarış. Tek telefonda ya da büyük ekranda sırayla oynanır, tek başına da olur. Herkese 5 soru, soru başına 20 saniye; doğru cevap 100 puan, hızlı cevap 50 puana kadar ek puan.
+- **Sesler:** sadece oyunlarda. Doğru ve yanlış cevap, yarışta her saniye tik-tak (son 5 saniyede daha tiz ve sık), süre dolması, bitiş ve rekor. Ses dosyası yok, sesler tarayıcıda üretilir (`js/ses.js`). Üst şeritteki hoparlör düğmesi sesi açıp kapatır, tercih cihazda saklanır. İlk açılışta sesin açık mı kapalı mı olacağı `ACIK_BASLA` satırından değiştirilir.
 - **Oyunlar ve yıldızlar:** dönen kartlar, mini quiz, "hangi med" oyunu, âyet sıralama.
 
 ## Gizlilik
@@ -54,6 +55,7 @@ haftalar/liste.js     hangi haftalar var, hangi sırayla
 haftalar/hafta-10.js  10. haftanın bütün içeriği
 fonts/                yazı tipleri (lisansları yanında)
 js/tablo.js           ortak puan tablosu (Firebase)
+js/ses.js             oyun sesleri
 firestore.rules       puan tablosunun güvenlik kuralları
 ikon.svg              sekme simgesi
 ```
