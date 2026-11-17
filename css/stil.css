@@ -320,6 +320,24 @@ body.kalem-acik .ik { cursor:crosshair }
 .kazanan .sayac { color:var(--bant-soluk); margin:0 }
 .gonder-yer { margin:12px 0 4px }
 .gonder-yer .geri-bildirim { margin:0 }
+.giris-form label { display:block; font-weight:700; margin:12px 0 6px }
+.giris-form label:first-child { margin-top:0 }
+.giris-form label .tr { font-weight:600 }
+.giris-form input { width:100%; font:600 18px/1.2 var(--f); padding:11px 12px; border:2px solid var(--soluk); border-radius:12px; background:var(--kart); color:var(--metin) }
+.giris-form input:focus-visible { outline:3px solid var(--kuran); outline-offset:1px }
+.giris-form .dugme { margin-top:8px }
+.hesap-satir { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:12px }
+.hesap-satir .dugme.kucuk { margin-top:0 }
+.en-iyi { font-size:16px; margin-bottom:12px }
+.en-iyi b { font-family:var(--f-bas); font-size:20px }
+.kayit .geri-bildirim { margin-top:0 }
+.kacan-liste { list-style:none; margin:0; padding:0; display:grid; gap:10px }
+.kacan-liste li { border-left:4px solid var(--renk); background:var(--acik); border-radius:0 12px 12px 0; padding:10px 12px }
+.kacan-liste .soru { margin-bottom:8px }
+.kacan-liste .soru p { font-weight:600; font-size:16px }
+.kacan-liste .soru p.tr { font-weight:500; font-size:15px }
+.kacan-git { display:inline-block; font-weight:700; font-size:14.5px; line-height:1.2; color:var(--metin); border:1.5px solid var(--renk); border-radius:10px; padding:6px 12px; text-decoration:none; background:var(--kart) }
+.kacan-git small { display:block; font-weight:500; color:var(--soluk) }
 
 .alt { color:var(--soluk); font-size:14px; padding-top:16px; padding-bottom:26px; border-top:1px solid var(--cizgi) }
 
