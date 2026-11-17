@@ -813,6 +813,7 @@ window.DERS = {
           var m = /TOO_MANY/.test(x.kod) ? 'Te vaak geprobeerd. Wacht even en probeer het later opnieuw. <span class="tr" lang="tr">Çok fazla deneme oldu. Biraz bekleyip tekrar dene.</span>'
             : /DISABLED/.test(x.kod) ? 'Dit account is uitgezet. Vraag het aan je leraar. <span class="tr" lang="tr">Bu hesap kapatılmış. Hocana sor.</span>'
             : x.kod === 'AG' ? hataYazi(x)
+            : /CONFIGURATION_NOT_FOUND|OPERATION_NOT_ALLOWED|API_KEY|PROJECT_NOT_FOUND/.test(x.kod) ? 'Inloggen is nog niet ingesteld. Vraag het aan je leraar. <span class="tr" lang="tr">Giriş henüz ayarlanmamış. Hocana söyle.</span>'
             : 'Gebruikersnaam of wachtwoord klopt niet. <span class="tr" lang="tr">Kullanıcı adı ya da şifre yanlış.</span>';
           girisEkrani(m);
           govde.querySelector('#kullanici').value = k;
