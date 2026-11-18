@@ -193,6 +193,18 @@ main { padding-top:22px; padding-bottom:96px; min-height:70vh }
 .dizilen li .ar { font-size:24px; display:block; line-height:1.6 }
 .dizilen li small { color:var(--soluk) }
 .ayet-secenekler { display:grid; gap:9px }
+/* Sırala oyunu: metinli adımlar */
+.sirala-not { color:var(--soluk); margin:-4px 0 12px }
+.sirala-not p.tr { font-size:15px }
+.adim-secenekler { display:grid; gap:8px; margin-top:12px }
+.adim-dugme { display:flex; align-items:center; gap:10px; width:100%; text-align:left; font:600 16px/1.3 var(--f); background:var(--kart); color:var(--metin); border:2px solid var(--cizgi); border-radius:12px; padding:10px 12px; cursor:pointer }
+.adim-dugme:hover { border-color:var(--renk) }
+.adim-dugme .simge { font-size:22px; flex:none }
+.adim-dugme small { display:block; font-weight:500; color:var(--soluk); font-size:14px }
+.adim-dugme.yanlis { border-color:var(--no); background:var(--nobg); animation:salla .3s }
+@keyframes salla { 25% { transform:translateX(-4px) } 75% { transform:translateX(4px) } }
+.dizilen.metinli li { font-weight:600 }
+.dizilen.metinli li small { display:block; font-weight:500; color:var(--soluk); font-size:14px }
 .ayet-dugme { font-size:26px; line-height:1.7; border:2px solid var(--cizgi); background:var(--kart); color:var(--metin); border-radius:12px; padding:6px 14px; cursor:pointer; text-align:right }
 .ayet-dugme.yanlis { border-color:var(--no); background:var(--nobg) }
 

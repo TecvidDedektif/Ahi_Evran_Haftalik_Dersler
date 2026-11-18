@@ -18,6 +18,7 @@
      kartlar  çevirmeli kartlar (önde soru, arkada cevap)
      quiz     çoktan seçmeli sorular, sonunda yıldız
      ezber    âyet âyet okunuş ve anlam + sıraya dizme oyunu
+     sirala   adımları doğru sıraya dizme oyunu (abdest, namaz gibi)
      medd     Arapça kelimede hangi med var oyunu
      baglanti başka bir sayfaya düğme
 
@@ -94,7 +95,7 @@ window.DERS = {
     var kazanilan = 0, toplam = 0;
     h.konular.forEach(function (k) {
       k.bloklar.forEach(function (b, bi) {
-        if (['quiz', 'ezber', 'medd'].indexOf(b.tur) === -1) return;
+        if (['quiz', 'ezber', 'medd', 'sirala'].indexOf(b.tur) === -1) return;
         toplam += 3;
         kazanilan += yildizlar[h.id + ':' + k.id + ':' + bi] || 0;
       });
@@ -332,11 +333,56 @@ window.DERS = {
     basla();
   }
 
+  // ---------- Sırala: adımları doğru sıraya dizme (abdest, namaz gibi) ----------
+  BLOK.sirala = function (b, yer) {
+    return '<section class="blok oyun" data-sirala="' + yer.bi + '"><h3>' + ikiSatir(b.baslik) + '</h3>' +
+      (b.aciklama ? '<div class="sirala-not">' + iki(b.aciklama) + '</div>' : '') + '<div class="oyun-ic"></div></section>';
+  };
+  function siralaKur(kok, b, yer) {
+    var ic = kok.querySelector('.oyun-ic'), sira, hata;
+    function basla() {
+      sira = 0; hata = 0;
+      var karisik = karistir(b.adimlar.map(function (a, i) { return { a: a, i: i }; }));
+      ic.innerHTML = '<p class="sayac">Tik op de stap die nu komt. <span class="tr" lang="tr">Sıradaki adıma dokun.</span></p>' +
+        '<ol class="dizilen metinli"></ol><div class="adim-secenekler">' +
+        karisik.map(function (k) { return '<button type="button" class="adim-dugme" data-i="' + k.i + '">' + (k.a.simge ? '<span class="simge" aria-hidden="true">' + esc(k.a.simge) + '</span>' : '') + '<span>' + ikiSatir(k.a) + '</span></button>'; }).join('') +
+        '</div><div class="sonuc" role="status"></div>';
+      ic.querySelectorAll('.adim-dugme').forEach(function (d) {
+        d.addEventListener('click', function () {
+          if (Number(d.dataset.i) === sira) {
+            var li = document.createElement('li');
+            li.innerHTML = ikiSatir(b.adimlar[sira]);
+            ic.querySelector('.dizilen').appendChild(li);
+            d.remove(); sira++;
+            if (sira === b.adimlar.length) bitis(); else if (window.SES) SES.cal('adim');
+          } else {
+            hata++;
+            if (window.SES) SES.cal('yanlis');
+            d.classList.add('yanlis');
+            setTimeout(function () { d.classList.remove('yanlis'); }, 500);
+          }
+        });
+      });
+    }
+    function bitis() {
+      var y = hata === 0 ? 3 : hata <= 2 ? 2 : 1;
+      yildizVer(yer.hafta, yer.konu + ':' + yer.bi, y);
+      if (window.SES) SES.cal(y === 3 ? 'rekor' : 'bitis');
+      ic.querySelector('.adim-secenekler').remove();
+      ic.querySelector('.sonuc').innerHTML = '<div class="bitis">' + yildizCiz(y) + '<p>' +
+        (hata === 0 ? 'Zonder fout! · <span class="tr" lang="tr">Hatasız!</span>' : hata + ' keer mis. · <span class="tr" lang="tr">' + hata + ' yanlış.</span>') +
+        '</p><button type="button" class="dugme ana tekrar">Opnieuw<small>Tekrar</small></button></div>';
+      ic.querySelector('.tekrar').addEventListener('click', basla);
+    }
+    basla();
+  }
+
   // ---------- Medd oyunu ----------
   var MEDD = {
     tabii: { ad: 'Tabiî', ipucu: { nl: 'Geen hemze', tr: 'Hemze yok' }, neden: { nl: 'Na de med-letter komt geen hemze: Medd-i Tabiî, 2 tellen.', tr: 'Med harfinden sonra hemze yok: Medd-i Tabiî, 2 hareke.' } },
     muttasil: { ad: 'Muttasıl', ipucu: { nl: 'Eén hokje', tr: 'Tek kutu' }, neden: { nl: 'Med-letter en hemze in hetzelfde woord: Muttasıl, 4 tellen.', tr: 'Med harfi ile hemze aynı kelimede: Muttasıl, 4 hareke.' } },
     munfasil: { ad: 'Munfasıl', ipucu: { nl: 'Twee hokjes', tr: 'İki kutu' }, neden: { nl: 'Med-letter aan het einde, hemze in het volgende woord: Munfasıl, 4 tellen.', tr: 'Med harfi kelime sonunda, hemze sonraki kelimede: Munfasıl, 4 hareke.' }, kopru: true },
+    ariz: { ad: 'Ârız', ipucu: { nl: 'Stoppen aan het eind', tr: 'Durakta (vakıf)' }, neden: { nl: 'Na de med-letter komt de laatste letter. Stop je daar, dan wordt die letter sakin: Medd-i ‘Ârız. Je mag 2, 4 of 6 tellen rekken; in de les rekken we 4. Lees je door zonder te stoppen, dan is het een gewone Tabiî.', tr: 'Med harfinden sonra son harf gelir. Orada durunca o harf sakin olur: Medd-i Ârız. 2, 4 ya da 6 hareke uzatılabilir; derste 4 hareke uzatıyoruz. Durmadan devam edersen normal tabiî med gibi okunur.' } },
     lazim: { ad: 'Lâzım', ipucu: { nl: 'Şedde of sukûn', tr: 'Şedde ya da sükûn' }, neden: { nl: 'Na de med-letter komt een şedde of sukûn: Lâzım, 6 tellen.', tr: 'Med harfinden sonra şedde ya da sükûn: Lâzım, 6 hareke.' } },
   };
   function meddDugmeleri(secenekler) {
@@ -1032,6 +1078,7 @@ window.DERS = {
       var s = govde.querySelector('[data-sohbet="' + bi + '"]'); if (s) sohbetKur(s, b);
       var q = govde.querySelector('[data-quiz="' + bi + '"]'); if (q) quizKur(q, b, yer);
       var e = govde.querySelector('[data-ezber="' + bi + '"]'); if (e) ezberKur(e, b, yer);
+      var si = govde.querySelector('[data-sirala="' + bi + '"]'); if (si) siralaKur(si, b, yer);
       var m = govde.querySelector('[data-medd="' + bi + '"]'); if (m) meddKur(m, b, yer);
     });
     isaretleriUygula(govde);

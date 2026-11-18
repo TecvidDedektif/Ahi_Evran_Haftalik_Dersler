@@ -84,6 +84,7 @@ Konu renkleri (`renk`): `ibadet` yeşil, `siyer` turuncu, `kuran` mavi, `ezber` 
 | `kartlar` | Dokununca dönen soru-cevap kartları | `kartlar` (`on`, `arka`) |
 | `quiz` | Çoktan seçmeli sorular, yıldız verir | `sorular` (`soru`, `secenekler`, `dogru`, isteğe bağlı `aciklama`) |
 | `ezber` | Âyetler ve "doğru sıraya diz" oyunu, yıldız verir | `ayetler` (`ar`, `okunus`, `nl`, `tr`) |
+| `sirala` | Adımları doğru sıraya dizme oyunu (abdest, namaz), yıldız verir | `baslik`, isteğe bağlı `aciklama`, `adimlar` (`simge`, `nl`, `tr`; doğru sırayla) |
 | `medd` | "Hangi med?" oyunu, yıldız verir | `secenekler`, `kelimeler` (`tur`, `yazi`, `okunus`, `nl`, `tr`, `kaynak`) |
 | `baglanti` | Başka bir sayfaya düğme | `metin`, `dugme`, `adres` |
 
@@ -147,7 +148,7 @@ Cevapların doğrusu yanlışı yoktur, hangisi seçilirse seçilsin hikâye dev
 
 Örnek: `'نَشَ(آ)[ءُ]'` tek kutu (muttasıl), `'يَٰبَنِ(ىٓ) [ءَ]ادَمَ'` iki kutu (munfasıl).
 
-Med türleri (`tur`): `tabii` 2 hareke, `muttasil` 4, `munfasil` 4, `lazim` 6.
+Med türleri (`tur`): `tabii` 2 hareke, `muttasil` 4, `munfasil` 4, `lazim` 6, `ariz` (durakta; 2, 4 ya da 6, derste 4). `ariz` kelimelerinde durakta sakin olan son harf `{ }` ile işaretlenir: `'يَشْكُرُ(و){نَ}'`.
 
 Arapça metni elle yazma; mushaftan ya da güvenilir bir Kur'an sitesinden kopyala.
 
