@@ -289,9 +289,9 @@ DERS.haftaEkle({
         },
         {
           tur: 'baglanti',
-          metin: { nl: 'Oefen Medd-i Lâzım met het spel in Tecvid Dedektif.', tr: 'Medd-i Lâzım’ı Tecvid Dedektif’teki oyunla tekrar et.' },
-          dugme: { nl: 'Naar Tecvid Dedektif', tr: 'Tecvid Dedektif’e git' },
-          adres: 'https://tecviddedektif.github.io/tecvid-dedektif/#/medd-lazim',
+          metin: { nl: 'Herhaal Medd-i Lâzım en alle andere regels in het tecvid-deel.', tr: 'Medd-i Lâzım’ı ve diğer bütün kuralları tecvid bölümünde tekrar et.' },
+          dugme: { nl: 'Naar Medd-i Lâzım', tr: 'Medd-i Lâzım’a git' },
+          adres: '#/tecvid/lazim',
         },
       ],
     },

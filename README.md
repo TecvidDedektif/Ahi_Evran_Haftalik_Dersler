@@ -10,6 +10,7 @@ Adres (Pages açıldıktan sonra): https://tecviddedektif.github.io/Ahi_Evran_Ha
 - **İşaret kalemi:** konu sayfalarında sağ alttaki "Stift · Kalem" düğmesi. Dört renk ve silgi var. Kelimeye dokununca ya da parmak cümlenin üstünden yana kaydırılınca işaretlenir.
 - **Zor yarış ve puan tablosu:** 40 zor sorudan her oyunda 20'si (her konudan 5), soru başına 30 saniye. Doğru cevap gösterilmez; sonda bilinemeyen sorular, cevabın bulunacağı konuya bağlantıyla listelenir. Hocanın açtığı hesapla giriş yapılır, günde bir hak vardır, haftanın en iyi puanı ortak tabloya yazılır.
 - **Sınıf yarışı:** haftanın sorularıyla isimli yarış. Tek telefonda ya da büyük ekranda sırayla oynanır, tek başına da olur. Herkese 5 soru, soru başına 20 saniye; doğru cevap 100 puan, hızlı cevap 50 puana kadar ek puan.
+- **Tecvid bölümü** (`#/tecvid`): derste öğrenilen bütün tecvid kuralları müfredat sırasıyla; her kuralın anlatımı, renkli örnekleri, oyunu ve quizi var. Bir de bütün kurallardan **karışık tekrar** oyunu. Haftalardaki Kur'an sekmesi o haftanın kuralına bağlanır.
 - **Sesler:** sadece oyunlarda. Doğru ve yanlış cevap, yarışta her saniye tik-tak (son 5 saniyede daha tiz ve sık), süre dolması, bitiş ve rekor. Ses dosyası yok, sesler tarayıcıda üretilir (`js/ses.js`). Üst şeritteki hoparlör düğmesi sesi açıp kapatır, tercih cihazda saklanır. İlk açılışta sesin açık mı kapalı mı olacağı `ACIK_BASLA` satırından değiştirilir.
 - **Oyunlar ve yıldızlar:** dönen kartlar, mini quiz, "hangi med" oyunu, âyet sıralama.
 
@@ -56,6 +57,7 @@ haftalar/hafta-10.js  10. haftanın bütün içeriği
 fonts/                yazı tipleri (lisansları yanında)
 js/tablo.js           ortak puan tablosu (Firebase)
 js/ses.js             oyun sesleri
+tecvid/kurallar.js    tecvid bölümünün bütün içeriği
 firestore.rules       puan tablosunun güvenlik kuralları
 ikon.svg              sekme simgesi
 ```
@@ -85,8 +87,9 @@ Konu renkleri (`renk`): `ibadet` yeşil, `siyer` turuncu, `kuran` mavi, `ezber` 
 | `quiz` | Çoktan seçmeli sorular, yıldız verir | `sorular` (`soru`, `secenekler`, `dogru`, isteğe bağlı `aciklama`) |
 | `ezber` | Âyetler ve "doğru sıraya diz" oyunu, yıldız verir | `ayetler` (`ar`, `okunus`, `nl`, `tr`) |
 | `sirala` | Adımları doğru sıraya dizme oyunu (abdest, namaz), yıldız verir | `baslik`, isteğe bağlı `aciklama`, `adimlar` (`simge`, `nl`, `tr`; doğru sırayla) |
-| `medd` | "Hangi med?" oyunu, yıldız verir | `secenekler`, `kelimeler` (`tur`, `yazi`, `okunus`, `nl`, `tr`, `kaynak`) |
-| `baglanti` | Başka bir sayfaya düğme | `metin`, `dugme`, `adres` |
+| `medd` | "Hangi med?" oyunu, yıldız verir | `secenekler`, `kelimeler` (`tur`, `yazi`, `okunus`, `nl`, `tr`, `kaynak`), isteğe bağlı `adet`: her türden eşit sayıda seçilecek kelime sayısı |
+| `baglanti` | Başka bir sayfaya düğme; `#/` ile başlayan adres site içinde açılır | `metin`, `dugme`, `adres` |
+| `ornekler` | Renkli işaretli örnek kelimeler | `kelimeler` (`tur`, `yazi`, `okunus`, `nl`, `tr`, `kaynak`) |
 
 `quiz` içinde `dogru`, doğru seçeneğin sırasıdır ve 0'dan başlar. Seçenekler ekranda karıştırılır.
 
@@ -148,10 +151,26 @@ Cevapların doğrusu yanlışı yoktur, hangisi seçilirse seçilsin hikâye dev
 
 Örnek: `'نَشَ(آ)[ءُ]'` tek kutu (muttasıl), `'يَٰبَنِ(ىٓ) [ءَ]ادَمَ'` iki kutu (munfasıl).
 
-Med türleri (`tur`): `tabii` 2 hareke, `muttasil` 4, `munfasil` 4, `lazim` 6, `ariz` (durakta; 2, 4 ya da 6, derste 4). `ariz` kelimelerinde durakta sakin olan son harf `{ }` ile işaretlenir: `'يَشْكُرُ(و){نَ}'`.
+Med harfi oyunu için `elif`, `vav`, `ye` türleri de var. Med türleri (`tur`): `tabii` 2 hareke, `muttasil` 4, `munfasil` 4, `lazim` 6, `ariz` (durakta; 2, 4 ya da 6, derste 4). `ariz` kelimelerinde durakta sakin olan son harf `{ }` ile işaretlenir: `'يَشْكُرُ(و){نَ}'`.
 
 Arapça metni elle yazma; mushaftan ya da güvenilir bir Kur'an sitesinden kopyala.
 
 ## Bağlantılı site
 
 Tecvid oyunu ayrı bir sitededir: https://tecviddedektif.github.io/tecvid-dedektif/
+
+## Tecvid bölümüne yeni kural eklemek
+
+`tecvid/kurallar.js` dosyasındaki `kurallar` listesinin sonuna bir kural eklenir:
+
+```js
+{
+  id: 'lin',                 // adres: #/tecvid/lin
+  hafta: 12,                 // derste işlendiği hafta
+  ad: { nl: 'Medd-i Lîn', tr: 'Medd-i Lîn' },
+  kisa: { nl: 'Lîn', tr: 'Lîn' },
+  bloklar: [ /* ozet, ornekler, medd, quiz ... haftalardaki gibi */ ],
+},
+```
+
+Karışık tekrar oyunu kendiliğinden güncellenir: bütün kuralların `medd` oyunlarındaki kelimelerden her türden eşit sayıda seçer. Haftanın Kur'an sekmesine bir `baglanti` bloğu (`adres: '#/tecvid/lin'`) eklemek yeter.
