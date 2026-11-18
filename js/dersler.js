@@ -10,6 +10,9 @@
      #/hafta-10/sabir      haftanın "sabir" konusu
      #/hafta-10/yaris      yarış sayfası: ortak puan tablosu + sınıf yarışı
      #/hafta-10/zor        zor yarış: tek kişilik, 20 soru, puan tabloya gönderilebilir
+     #/tecvid              tecvid bölümü: bütün kurallar
+     #/tecvid/ariz         bir kural
+     #/tecvid/karisik      bütün kurallardan karışık tekrar oyunu
 
    Bir konunun içindeki parçalar (bloklar):
      sohbet   adım adım açılan hikâye: soru, cevap, ters köşe
@@ -20,7 +23,8 @@
      ezber    âyet âyet okunuş ve anlam + sıraya dizme oyunu
      sirala   adımları doğru sıraya dizme oyunu (abdest, namaz gibi)
      medd     Arapça kelimede hangi med var oyunu
-     baglanti başka bir sayfaya düğme
+     baglanti başka bir sayfaya düğme (#/ ile başlıyorsa site içi)
+     ornekler renkli işaretli örnek kelimeler
 
    Sunucu (js/tablo.js): Zor yarış hocanın açtığı hesaplarla oynanır, günde bir hak; puan tabloya kendiliğinden yazılır.
    Bu cihazda saklananlar (hiçbiri dışarı gönderilmez):
@@ -36,6 +40,8 @@ window.DERS = {
   sira: [],
   haftaEkle: function (h) { this.haftalar[h.id] = h; },
   liste: function (l) { this.sira = l; },
+  tecvid: null,
+  tecvidEkle: function (t) { this.tecvid = t; },
 };
 
 (function () {
@@ -379,6 +385,9 @@ window.DERS = {
 
   // ---------- Medd oyunu ----------
   var MEDD = {
+    elif: { ad: 'Elif', ipucu: { nl: 'Na üstün', tr: 'Üstünden sonra' }, neden: { nl: 'De letter ervoor heeft een üstün: de elif maakt een lange “â”. Medd-i Tabiî, 2 tellen.', tr: 'Önceki harf üstünlü: elif uzun bir “â” sesi verir. Medd-i Tabiî, 2 hareke.' } },
+    vav: { ad: 'Vav', ipucu: { nl: 'Na ötre', tr: 'Ötreden sonra' }, neden: { nl: 'De letter ervoor heeft een ötre: de vav maakt een lange “û”. Medd-i Tabiî, 2 tellen.', tr: 'Önceki harf ötreli: vav uzun bir “û” sesi verir. Medd-i Tabiî, 2 hareke.' } },
+    ye: { ad: 'Ye', ipucu: { nl: 'Na esre', tr: 'Esreden sonra' }, neden: { nl: 'De letter ervoor heeft een esre: de ye maakt een lange “î”. Medd-i Tabiî, 2 tellen.', tr: 'Önceki harf esreli: ye uzun bir “î” sesi verir. Medd-i Tabiî, 2 hareke.' } },
     tabii: { ad: 'Tabiî', ipucu: { nl: 'Geen hemze', tr: 'Hemze yok' }, neden: { nl: 'Na de med-letter komt geen hemze: Medd-i Tabiî, 2 tellen.', tr: 'Med harfinden sonra hemze yok: Medd-i Tabiî, 2 hareke.' } },
     muttasil: { ad: 'Muttasıl', ipucu: { nl: 'Eén hokje', tr: 'Tek kutu' }, neden: { nl: 'Med-letter en hemze in hetzelfde woord: Muttasıl, 4 tellen.', tr: 'Med harfi ile hemze aynı kelimede: Muttasıl, 4 hareke.' } },
     munfasil: { ad: 'Munfasıl', ipucu: { nl: 'Twee hokjes', tr: 'İki kutu' }, neden: { nl: 'Med-letter aan het einde, hemze in het volgende woord: Munfasıl, 4 tellen.', tr: 'Med harfi kelime sonunda, hemze sonraki kelimede: Munfasıl, 4 hareke.' }, kopru: true },
@@ -427,13 +436,27 @@ window.DERS = {
         '<button type="button" class="dugme ana tekrar">Opnieuw<small>Tekrar</small></button></div>';
       ic.querySelector('.tekrar').addEventListener('click', basla);
     }
-    function basla() { liste = karistir(b.kelimeler); sira = 0; dogru = 0; soru(); }
+    function basla() { liste = b.adet ? dengeliSec(b.kelimeler, b.adet, 'tur') : karistir(b.kelimeler); sira = 0; dogru = 0; soru(); }
     basla();
   }
 
+  // Site içi bağlantı (#/ ile başlayan) aynı sekmede açılır, dış bağlantı yeni sekmede
   BLOK.baglanti = function (b) {
+    var ic = /^#/.test(b.adres);
     return '<section class="blok baglanti">' + (b.metin ? iki(b.metin) : '') +
-      '<a class="dugme ana" href="' + esc(b.adres) + '" target="_blank" rel="noopener">' + ikiSatir(b.dugme) + '</a></section>';
+      '<a class="dugme ana" href="' + esc(b.adres) + '"' + (ic ? '' : ' target="_blank" rel="noopener"') + '>' + ikiSatir(b.dugme) + '</a></section>';
+  };
+
+  // Renkli işaretli örnek kelimeler (tecvid kuralları için)
+  BLOK.ornekler = function (b) {
+    return '<section class="blok ornekler"><h3>' + ikiSatir(b.baslik || { nl: 'Voorbeelden', tr: 'Örnekler' }) + '</h3>' +
+      '<p class="renk-anahtar"><span class="med">blauw</span> med-letter · <span class="hemze">rood</span> hemze · <span class="sukun">paars</span> sukûn of şedde' +
+      '<span class="tr" lang="tr"><span class="med">mavi</span> med harfi · <span class="hemze">kırmızı</span> hemze · <span class="sukun">mor</span> sükûn ya da şedde</span></p>' +
+      '<div class="ornek-liste">' + b.kelimeler.map(function (k) {
+        return '<div class="ornek">' + kelimeCiz(k.yazi, true, MEDD[k.tur] && MEDD[k.tur].kopru) +
+          '<p class="okunus"><b>' + esc(k.okunus) + '</b></p><p>' + esc(k.nl) + '<small class="tr" lang="tr">' + esc(k.tr) + '</small></p>' +
+          '<p class="kaynak">' + esc(k.kaynak) + '</p></div>';
+      }).join('') + '</div></section>';
   };
 
   // =========================================================
@@ -814,14 +837,15 @@ window.DERS = {
     });
   }
 
-  // Havuzdan her konudan eşit sayıda rastgele soru seçer (40 soru, 4 konu -> her konudan 5).
-  function zorSec(havuz, adet) {
-    var gruplar = {}, konular = [], l = [], i = 0;
-    karistir(havuz).forEach(function (z) { if (!gruplar[z.konu]) { gruplar[z.konu] = []; konular.push(z.konu); } gruplar[z.konu].push(z); });
+  // Listeden her gruptan eşit sayıda rastgele öğe seçer (40 soru, 4 konu -> her konudan 5).
+  function dengeliSec(havuz, adet, alan) {
+    var gruplar = {}, adlar = [], l = [], i = 0;
+    karistir(havuz).forEach(function (z) { var a = z[alan]; if (!gruplar[a]) { gruplar[a] = []; adlar.push(a); } gruplar[a].push(z); });
     adet = Math.min(adet, havuz.length);
-    while (l.length < adet) { var g = gruplar[konular[i++ % konular.length]]; if (g.length) l.push(g.shift()); }
+    while (l.length < adet) { var g = gruplar[adlar[i++ % adlar.length]]; if (g.length) l.push(g.shift()); }
     return karistir(l);
   }
+  function zorSec(havuz, adet) { return dengeliSec(havuz, adet, 'konu'); }
 
   function zorSayfasi(h) {
     var T = window.TABLO, havuz = h.zor || [], adet = Math.min(ZOR.tur, havuz.length);
@@ -1047,7 +1071,9 @@ window.DERS = {
     }).join('');
     govde.innerHTML = '<div class="ana"><h1>Selam! Kies een week<span class="tr" lang="tr"> · Bir hafta seç</span></h1>' +
       '<p class="giris">Lees de verhalen, markeer met de stift, verdien sterren en doe mee met de wedstrijd. <span class="tr" lang="tr">Hikâyeleri oku, kalemle işaretle, yıldız topla ve yarışa katıl.</span></p>' +
-      (hatalar.length ? '<div class="hata">' + hatalar.map(esc).join('<br>') + '</div>' : '') + kartlar + '</div>';
+      (hatalar.length ? '<div class="hata">' + hatalar.map(esc).join('<br>') + '</div>' : '') +
+      (D.tecvid ? '<a class="yaris-serit tecvid-serit" href="#/tecvid"><span>Tecvid: alle regels op één plek<small class="tr" lang="tr">Tecvid: bütün kurallar tek yerde</small></span><span class="ok" aria-hidden="true">›</span></a>' : '') +
+      kartlar + '</div>';
   }
 
   function haftaSayfasi(h, konuId) {
@@ -1072,17 +1098,96 @@ window.DERS = {
       (sonraki ? '<p class="devam"><a class="dugme" href="#/' + esc(h.id) + '/' + esc(sonraki.id) + '">Volgende: ' + nl(sonraki.kisa) + '<small>Sıradaki: ' + tr(sonraki.kisa) + '</small></a></p>'
                : '<p class="devam"><a class="dugme ana" href="#/' + esc(h.id) + '/yaris">Klaar! Doe de wedstrijd<small>Bitti! Yarışa katıl</small></a></p>') +
       '</article>';
+    bloklariKur(konu.bloklar, h.id, konu.id);
+    isaretleriUygula(govde);
+    kalemGoster(true);
+  }
+
+  function bloklariCiz(bloklar) {
+    return bloklar.map(function (b, bi) { return BLOK[b.tur] ? BLOK[b.tur](b, { bi: bi }) : ''; }).join('');
+  }
+  // Sayfadaki oyunları çalıştırır. Yıldızlar "hafta:konu:blok" anahtarıyla saklanır (tecvid için hafta = 'tecvid').
+  function bloklariKur(bloklar, haftaId, konuId) {
     kartlariBagla(govde);
-    konu.bloklar.forEach(function (b, bi) {
-      var yer = { hafta: h.id, konu: konu.id, bi: bi };
+    bloklar.forEach(function (b, bi) {
+      var yer = { hafta: haftaId, konu: konuId, bi: bi };
       var s = govde.querySelector('[data-sohbet="' + bi + '"]'); if (s) sohbetKur(s, b);
       var q = govde.querySelector('[data-quiz="' + bi + '"]'); if (q) quizKur(q, b, yer);
       var e = govde.querySelector('[data-ezber="' + bi + '"]'); if (e) ezberKur(e, b, yer);
       var si = govde.querySelector('[data-sirala="' + bi + '"]'); if (si) siralaKur(si, b, yer);
       var m = govde.querySelector('[data-medd="' + bi + '"]'); if (m) meddKur(m, b, yer);
     });
+  }
+
+  // =========================================================
+  // Tecvid bölümü: bütün kurallar tek yerde (tecvid/kurallar.js)
+  // =========================================================
+  function tecvidUst(geriAdres, geriNl, geriTr, adNl, adTr) {
+    ust.className = 'ust';
+    ust.innerHTML = '<div class="kap"><a class="geri" href="' + geriAdres + '">‹ ' + geriNl + '<small class="tr" lang="tr">' + geriTr + '</small></a>' +
+      '<span class="marka kucuk">' + adNl + '<small class="tr" lang="tr">' + adTr + '</small></span></div>';
+  }
+  function tecvidKarisikBlok() {
+    var gorulen = {}, kelimeler = [], turler = [];
+    D.tecvid.kurallar.forEach(function (k) {
+      k.bloklar.forEach(function (b) {
+        if (b.tur !== 'medd') return;
+        b.kelimeler.forEach(function (w) {
+          if (['elif', 'vav', 'ye'].indexOf(w.tur) !== -1 || gorulen[w.yazi]) return;
+          gorulen[w.yazi] = 1; kelimeler.push(w);
+          if (turler.indexOf(w.tur) === -1) turler.push(w.tur);
+        });
+      });
+    });
+    var sira = ['tabii', 'muttasil', 'munfasil', 'lazim', 'ariz'];
+    turler.sort(function (a, b) { return sira.indexOf(a) - sira.indexOf(b); });
+    return { tur: 'medd', baslik: { nl: 'Gemengde herhaling: welke medd?', tr: 'Karışık tekrar: hangi med?' }, secenekler: turler, kelimeler: kelimeler, adet: 15 };
+  }
+  function tecvidAna() {
+    var T = D.tecvid;
+    document.title = 'Tecvid · Ahi Evran Camii';
+    tecvidUst('#/', 'Alle weken', 'Tüm haftalar', 'Tecvidregels', 'Tecvid kuralları');
+    var karisik = tecvidKarisikBlok();
+    var ky = yildizlar['tecvid:karisik:0'] || 0;
+    govde.innerHTML = '<div class="tecvid-ana"><h1>Tecvid: alle regels<span class="tr" lang="tr"> · Tecvid: bütün kurallar</span></h1>' +
+      '<p class="giris">Alle regels die we in de les leerden, op volgorde. Elke regel heeft uitleg, voorbeelden en een spel. ' +
+      '<span class="tr" lang="tr">Derste öğrendiğimiz bütün kurallar, sırasıyla. Her kuralın anlatımı, örnekleri ve oyunu var.</span></p>' +
+      '<a class="zor-kart" href="#/tecvid/karisik"><span class="zor-yazi"><b>Gemengde herhaling<small class="tr" lang="tr">Karışık tekrar</small></b>' +
+      '<span>' + karisik.adet + ' woorden van alle regels door elkaar. Goed om te oefenen voor een toets.<small class="tr" lang="tr">Bütün kurallardan karışık ' + karisik.adet + ' kelime. Sınavdan önce tekrar için.</small></span></span>' +
+      '<span class="tecvid-y">' + yildizCiz(ky) + '</span><span class="ok" aria-hidden="true">›</span></a>' +
+      '<ol class="kural-liste">' + T.kurallar.map(function (k, i) {
+        var y = haftaYildizi({ id: 'tecvid', konular: [k] });
+        return '<li><a class="kural-kart" href="#/tecvid/' + esc(k.id) + '"><span class="kural-no">' + (i + 1) + '</span>' +
+          '<span class="kural-bilgi"><b>' + nl(k.ad) + '</b><small class="tr" lang="tr">' + tr(k.ad) + '</small>' +
+          '<span class="kural-alt">' + (k.hafta ? '<span class="rozet">Week ' + esc(k.hafta) + '<span class="tr" lang="tr"> · ' + esc(k.hafta) + '. hafta</span></span>' : '') +
+          (y.toplam ? yildizSayac(y.kazanilan, y.toplam) : '') + '</span></span><span class="ok" aria-hidden="true">›</span></a></li>';
+      }).join('') + '</ol></div>';
+  }
+  function tecvidKural(kural) {
+    var T = D.tecvid, i = T.kurallar.indexOf(kural), onceki = T.kurallar[i - 1], sonraki = T.kurallar[i + 1];
+    acik = { hafta: 'tecvid', konu: kural.id };
+    document.title = nl(kural.ad) + ' · Tecvid';
+    tecvidUst('#/tecvid', 'Alle regels', 'Bütün kurallar', 'Regel ' + (i + 1), (i + 1) + '. kural');
+    govde.innerHTML = '<article class="konu renk-kuran"><header class="konu-bas"><h1>' + nl(kural.ad) + '</h1><p class="tr" lang="tr">' + tr(kural.ad) + '</p></header>' +
+      bloklariCiz(kural.bloklar) +
+      '<nav class="kural-gezinti">' +
+      (onceki ? '<a class="dugme" href="#/tecvid/' + esc(onceki.id) + '">‹ ' + nl(onceki.kisa) + '<small>' + tr(onceki.kisa) + '</small></a>' : '<span></span>') +
+      (sonraki ? '<a class="dugme ana" href="#/tecvid/' + esc(sonraki.id) + '">' + nl(sonraki.kisa) + ' ›<small>' + tr(sonraki.kisa) + '</small></a>'
+               : '<a class="dugme ana" href="#/tecvid/karisik">Gemengde herhaling ›<small>Karışık tekrar</small></a>') +
+      '</nav></article>';
+    bloklariKur(kural.bloklar, 'tecvid', kural.id);
     isaretleriUygula(govde);
     kalemGoster(true);
+  }
+  function tecvidKarisik() {
+    acik = null;
+    document.title = 'Gemengde herhaling · Tecvid';
+    tecvidUst('#/tecvid', 'Alle regels', 'Bütün kurallar', 'Herhaling', 'Karışık tekrar');
+    var b = tecvidKarisikBlok();
+    govde.innerHTML = '<article class="konu renk-kuran"><header class="konu-bas"><h1>Gemengde herhaling</h1><p class="tr" lang="tr">Karışık tekrar</p></header>' +
+      '<p class="giris">Woorden van alle regels door elkaar. Elke keer andere woorden. <span class="tr" lang="tr">Bütün kurallardan karışık kelimeler. Her seferinde başka kelimeler gelir.</span></p>' +
+      BLOK.medd(b, { bi: 0 }) + '</article>';
+    bloklariKur([b], 'tecvid', 'karisik');
   }
 
   function yonlendir() {
@@ -1090,7 +1195,12 @@ window.DERS = {
     temizlik = [];
     var p = location.hash.split('/');
     var h = D.haftalar[p[1]];
-    if (!h) { acik = null; kalemGoster(false); anaSayfa(); }
+    if (p[1] === 'tecvid' && D.tecvid) {
+      var kural = D.tecvid.kurallar.filter(function (k) { return k.id === p[2]; })[0];
+      if (kural) tecvidKural(kural);
+      else { acik = null; kalemGoster(false); if (p[2] === 'karisik') tecvidKarisik(); else tecvidAna(); }
+    }
+    else if (!h) { acik = null; kalemGoster(false); anaSayfa(); }
     else if (p[2] === 'yaris') { acik = null; kalemGoster(false); yarisSayfasi(h); }
     else if (p[2] === 'zor') { acik = null; kalemGoster(false); zorSayfasi(h); }
     else haftaSayfasi(h, p[2]);
@@ -1103,6 +1213,7 @@ window.DERS = {
   window.addEventListener('error', function (e) {
     var f = e.filename || '';
     if (f.indexOf('/haftalar/') !== -1) hatalar.push(f.split('/haftalar/')[1] + ', ' + e.lineno + '. satır: yazım hatası (' + e.message + ')');
+    if (f.indexOf('/tecvid/') !== -1) hatalar.push('tecvid/' + f.split('/tecvid/')[1] + ', ' + e.lineno + '. satır: yazım hatası (' + e.message + ')');
   });
 
   document.addEventListener('DOMContentLoaded', function () {

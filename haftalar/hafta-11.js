@@ -326,6 +326,12 @@ DERS.haftaEkle({
           ],
         },
         {
+          tur: 'baglanti',
+          metin: { nl: 'Herhaal Medd-i ‘Ârız en alle andere regels in het tecvid-deel.', tr: 'Medd-i Ârız’ı ve diğer bütün kuralları tecvid bölümünde tekrar et.' },
+          dugme: { nl: 'Naar Medd-i ‘Ârız', tr: 'Medd-i Ârız’a git' },
+          adres: '#/tecvid/ariz',
+        },
+        {
           tur: 'quiz',
           baslik: { nl: 'Ken je de betekenis?', tr: 'Anlamını biliyor musun?' },
           sorular: [
