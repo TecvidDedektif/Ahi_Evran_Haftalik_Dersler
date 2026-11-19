@@ -23,6 +23,7 @@
 DERS.haftaEkle({
   id: 'hafta-11',                      // dosya adıyla aynı olmalı
   no: 11,
+  acilis: '2026-11-28T13:00',            // bu saate kadar çocuklara kilitli (Hollanda saati), sonra kendiliğinden açılır
 
   konular: [
     // =======================================================
