@@ -11,6 +11,8 @@ Adres (Pages açıldıktan sonra): https://tecviddedektif.github.io/Ahi_Evran_Ha
 - **Zor yarış ve puan tablosu:** 40 zor sorudan her oyunda 20'si (her konudan 5), soru başına 30 saniye. Doğru cevap gösterilmez; sonda bilinemeyen sorular, cevabın bulunacağı konuya bağlantıyla listelenir. Hocanın açtığı hesapla giriş yapılır, günde bir hak vardır, haftanın en iyi puanı ortak tabloya yazılır.
 - **Sınıf yarışı:** haftanın sorularıyla isimli yarış. Tek telefonda ya da büyük ekranda sırayla oynanır, tek başına da olur. Herkese 5 soru, soru başına 20 saniye; doğru cevap 100 puan, hızlı cevap 50 puana kadar ek puan.
 - **Tecvid bölümü** (`#/tecvid`): derste öğrenilen bütün tecvid kuralları müfredat sırasıyla; her kuralın anlatımı, renkli örnekleri, oyunu ve quizi var. Bir de bütün kurallardan **karışık tekrar** oyunu. Haftalardaki Kur'an sekmesi o haftanın kuralına bağlanır.
+- **Haftanın açılışı:** her hafta, dersi yapılan cumartesi saat 13:00'te (ders bitince) açılır. O saate kadar ana sayfada kilitli kart görünür: konular yazmaz, sadece ne zaman açılacağı yazar. O haftanın tecvid kuralı da kilitli kalır, karışık tekrar o kuralın kelimelerini sormaz. Açılış saatinde sayfa açıksa kendiliğinden açılır.
+- **Hoca kodu:** kilitli sayfanın altındaki "Leraar? · Hoca mısın?" ile hoca kodunu yazınca kilitler o ekranda açılır (derste büyük ekranda göstermek için). Sadece o sekmede geçerlidir; üstteki "Kapat" düğmesiyle ya da tarayıcı kapanınca kilit geri gelir. Kodun kendisi hiçbir dosyada yazmaz, `js/dersler.js` içinde sadece özeti (`HOCA_OZET`) var; kodu değiştirmek için özet yeniden hesaplanır.
 - **Sesler:** sadece oyunlarda. Doğru ve yanlış cevap, yarışta her saniye tik-tak (son 5 saniyede daha tiz ve sık), süre dolması, bitiş ve rekor. Ses dosyası yok, sesler tarayıcıda üretilir (`js/ses.js`). Üst şeritteki hoparlör düğmesi sesi açıp kapatır, tercih cihazda saklanır. İlk açılışta sesin açık mı kapalı mı olacağı `ACIK_BASLA` satırından değiştirilir.
 - **Oyunlar ve yıldızlar:** dönen kartlar, mini quiz, "hangi med" oyunu, âyet sıralama.
 
@@ -67,10 +69,16 @@ Kurulum ya da derleme yok. `index.html` dosyasını tarayıcıda açmak yeter.
 ## Yeni hafta eklemek
 
 1. `haftalar/hafta-10.js` dosyasını kopyala, adını `hafta-11.js` yap.
-2. İçinde `id: 'hafta-11'` ve `no: 11` yaz, konuları değiştir.
+2. İçinde `id: 'hafta-11'`, `no: 11` ve açılış zamanını yaz, konuları değiştir:
+   ```js
+   acilis: '2026-11-28T13:00',   // yıl-ay-gün, T, saat:dakika (Hollanda saati)
+   ```
+   `acilis` yazılmazsa hafta hemen açık olur. Yanlış yazılırsa hafta kilitlenmez ve ana sayfada uyarı çıkar.
 3. `haftalar/liste.js` içindeki listeye `'hafta-11'` ekle.
 
-En son eklenen hafta ana sayfada en üstte ve "Bu hafta" etiketiyle görünür.
+Açık olan en yeni hafta ana sayfada "Bu hafta" etiketiyle görünür; henüz açılmamış haftalar onun üstünde kilitli durur.
+
+Bu kilit telefonda çalışır: hafta dosyası GitHub'da herkese açıktır ve telefonun saatini ileri alan biri içeriği görebilir. Çocuklar için yeterli, gizli bilgi için değil.
 
 ## Bir haftanın yapısı
 

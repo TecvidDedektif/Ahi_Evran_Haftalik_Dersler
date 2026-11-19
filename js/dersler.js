@@ -14,6 +14,10 @@
      #/tecvid/ariz         bir kural
      #/tecvid/karisik      bütün kurallardan karışık tekrar oyunu
 
+   Haftanın açılışı: hafta dosyasında acilis: '2026-11-28T13:00' (Hollanda saati).
+   O saate kadar hafta (ve o haftanın tecvid kuralı) çocuklara kilitlidir, o saatte kendiliğinden açılır.
+   Hoca, kilitli sayfada hoca kodunu yazınca kilitler o ekranda açılır.
+
    Bir konunun içindeki parçalar (bloklar):
      sohbet   adım adım açılan hikâye: soru, cevap, ters köşe
      ozet     kısa maddeler
@@ -33,6 +37,7 @@
      dersler-kalem    son seçilen kalem rengi
      dersler-yaris    sınıf yarışı isimleri ve en iyi puanlar
      dersler-hesap    Zor yarış oturumu (çıkış yapınca silinir)
+     dersler-hoca     hoca modu (sadece bu sekmede; tarayıcı kapanınca silinir)
    ============================================================ */
 
 window.DERS = {
@@ -1047,6 +1052,112 @@ window.DERS = {
   }
 
   // =========================================================
+  // Haftanın açılışı ve hoca kodu
+  // Bu bir telefon kilididir: hafta dosyası GitHub'da açık durur,
+  // telefonun saatini ileri alan da görebilir. 13-14 yaş için yeterli.
+  // =========================================================
+  var HOCA_OZET = 'r0s1ea';          // hoca kodunun özeti; kodun kendisi hiçbir dosyada yazmaz
+  var hocaAcik = false;              // sessionStorage çalışmazsa yedek
+  var kilitGorundu = false;          // sayfada kilitli bir şey var mı (açılış saatinde sayfa yenilenir)
+  var KILIT = '<svg class="kilit-simge" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 10V7a5 5 0 0 1 10 0v3h1a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zm2 0h6V7a3 3 0 0 0-6 0z"/></svg>';
+
+  // '2026-11-28T13:00' Hollanda saatiyle hangi an? (yaz ve kış saati dahil)
+  function hollandaZamani(s) {
+    var m = /^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)$/.exec(String(s || ''));
+    if (!m) return NaN;
+    var yerel = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+    try {
+      var f = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Amsterdam', hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' });
+      var fark = function (t) { var p = {}; f.formatToParts(new Date(t)).forEach(function (x) { p[x.type] = Number(x.value); }); return Date.UTC(p.year, p.month - 1, p.day, p.hour % 24, p.minute) - t; };
+      return yerel - fark(yerel - fark(yerel));
+    } catch (e) { return new Date(s).getTime(); }
+  }
+  function acilisi(h) { return h && h.acilis ? hollandaZamani(h.acilis) : 0; }
+  function hocaModu() { if (hocaAcik) return true; try { return sessionStorage.getItem('dersler-hoca') === '1'; } catch (e) { return false; } }
+  function hocaAyarla(ac) { hocaAcik = ac; try { if (ac) sessionStorage.setItem('dersler-hoca', '1'); else sessionStorage.removeItem('dersler-hoca'); } catch (e) {} }
+  function kilitBekliyor(h) { return acilisi(h) > Date.now(); }           // öğrenciler için henüz açılmadı
+  function kilitli(h) { return kilitBekliyor(h) && !hocaModu(); }
+  function kuralHaftasi(k) { return k && k.hafta ? D.haftalar['hafta-' + k.hafta] : null; }
+  function kuralKilitli(k) { return kilitli(kuralHaftasi(k)); }
+  function acilisYazi(t) {
+    var d = new Date(t);
+    function y(dil, o) { try { return d.toLocaleString(dil, Object.assign({ timeZone: 'Europe/Amsterdam' }, o)); } catch (e) { return d.toLocaleString(dil, o); } }
+    var gun = { weekday: 'long', day: 'numeric', month: 'long' }, kisa = { day: 'numeric', month: 'long' }, saat = { hour: '2-digit', minute: '2-digit' };
+    return { nl: y('nl-NL', gun) + ' om ' + y('nl-NL', saat), tr: y('tr-TR', gun) + ', saat ' + y('tr-TR', saat), kisaNl: y('nl-NL', kisa), kisaTr: y('tr-TR', kisa) };
+  }
+  function kalanYazi(t) {
+    var dk = Math.max(1, Math.ceil((t - Date.now()) / 60000));
+    if (dk > 36 * 60) { var g = Math.round(dk / 1440); return 'Nog ' + g + ' dagen<span class="tr" lang="tr"> · ' + g + ' gün kaldı</span>'; }
+    if (dk > 90) { var s = Math.round(dk / 60); return 'Nog ' + s + ' uur<span class="tr" lang="tr"> · ' + s + ' saat kaldı</span>'; }
+    return 'Nog ' + dk + (dk === 1 ? ' minuut' : ' minuten') + '<span class="tr" lang="tr"> · ' + dk + ' dakika kaldı</span>';
+  }
+  function kilitKarti(h) {
+    var a = acilisYazi(acilisi(h));
+    kilitGorundu = true;
+    return '<a class="hafta-kart kilitli" href="#/' + esc(h.id) + '">' +
+      '<div class="hafta-no"><span>Week</span><b>' + esc(h.no) + '</b><small class="tr" lang="tr">' + esc(h.no) + '. hafta</small></div>' +
+      '<div class="hafta-bilgi"><span class="rozet kilit-rozet">' + KILIT + 'Nog op slot<span class="tr" lang="tr"> · Henüz kilitli</span></span>' +
+      '<p class="kilit-yazi">Gaat open op ' + a.nl + ', na de les.<small class="tr" lang="tr">' + a.tr + ', dersten sonra açılır.</small></p></div></a>';
+  }
+  // Kilitli hafta ya da kural: ne zaman açılacağı, kalan süre ve hoca girişi
+  function kilitSayfasi(o) {
+    var a = acilisYazi(o.t);
+    kilitGorundu = true;
+    govde.innerHTML = '<section class="kilit-sayfa">' + KILIT.replace('kilit-simge', 'kilit-simge buyuk') +
+      '<h1>' + o.baslikNl + '<span class="tr" lang="tr">' + o.baslikTr + '</span></h1>' +
+      (o.notNl ? '<p>' + o.notNl + ' <span class="tr" lang="tr">' + o.notTr + '</span></p>' : '') +
+      '<p class="kilit-zaman"><b>Gaat open op ' + a.nl + ', na de les.</b><small class="tr" lang="tr">' + a.tr + ', dersten sonra açılır.</small></p>' +
+      '<p class="kilit-kalan">' + kalanYazi(o.t) + '</p>' +
+      '<p>Tot in de les! <span class="tr" lang="tr">Derste görüşürüz!</span></p>' +
+      '<details class="hoca-giris"><summary>Leraar?<span class="tr" lang="tr"> · Hoca mısın?</span></summary>' +
+      '<form class="giris-form" autocomplete="off" novalidate><label for="hoca-kod">Leraarcode<span class="tr" lang="tr"> · Hoca kodu</span></label>' +
+      '<input id="hoca-kod" type="password" inputmode="numeric" autocomplete="off" maxlength="12">' +
+      '<button class="dugme ana" type="submit">Open op dit scherm<small>Bu ekranda aç</small></button>' +
+      '<p class="uyari" role="alert"></p>' +
+      '<p class="hoca-not">Alleen op dit scherm, tot je de browser sluit. <span class="tr" lang="tr">Sadece bu ekranda, tarayıcıyı kapatana kadar.</span></p></form></details></section>';
+    var form = govde.querySelector('.hoca-giris form'), giris = form.querySelector('input');
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (ozetle('ahi-evran-hoca:' + giris.value.trim()) === HOCA_OZET) { hocaAyarla(true); yonlendir(); return; }
+      form.querySelector('.uyari').innerHTML = 'Verkeerde code. <span class="tr" lang="tr">Kod yanlış.</span>';
+      giris.value = ''; giris.focus();
+    });
+  }
+  function haftaKilidi(h) {
+    document.title = 'Week ' + h.no + ' · Ahi Evran Camii';
+    ustGeri('#/', 'Alle weken', 'Tüm haftalar', 'Week ' + esc(h.no), esc(h.no) + '. hafta');
+    kilitSayfasi({ t: acilisi(h), baslikNl: 'Week ' + esc(h.no) + ' is nog op slot', baslikTr: esc(h.no) + '. hafta henüz kilitli' });
+  }
+  function kuralKilidi(kural) {
+    var i = D.tecvid.kurallar.indexOf(kural), h = kuralHaftasi(kural);
+    document.title = nl(kural.ad) + ' · Tecvid';
+    ustGeri('#/tecvid', 'Alle regels', 'Bütün kurallar', 'Regel ' + (i + 1), (i + 1) + '. kural');
+    kilitSayfasi({ t: acilisi(h), baslikNl: nl(kural.ad) + ' is nog op slot', baslikTr: tr(kural.ad) + ' henüz kilitli',
+      notNl: 'Deze regel leren we in week ' + esc(h.no) + '.', notTr: 'Bu kuralı ' + esc(h.no) + '. haftada öğreniyoruz.' });
+  }
+  // Hoca modu açıkken ve kilitli bir hafta varken üstte görünür, "Kapat" kilitleri geri getirir.
+  var hocaKutu = document.createElement('div');
+  hocaKutu.className = 'kap hoca-kap'; hocaKutu.hidden = true;
+  govde.parentNode.insertBefore(hocaKutu, govde);
+  function hocaSeridi() {
+    var goster = hocaModu() && D.sira.some(function (id) { return kilitBekliyor(D.haftalar[id]); });
+    hocaKutu.hidden = !goster;
+    if (!goster) { hocaKutu.innerHTML = ''; return; }
+    hocaKutu.innerHTML = '<div class="hoca-serit" role="status">' + KILIT + '<span>Leraarmodus: wat nog op slot is, staat open op dit scherm.<small class="tr" lang="tr">Hoca modu: kilitli olanlar bu ekranda açık.</small></span>' +
+      '<button type="button" class="hoca-kapat">Sluiten<small>Kapat</small></button></div>';
+    hocaKutu.querySelector('.hoca-kapat').addEventListener('click', function () { hocaAyarla(false); yonlendir(); });
+  }
+  // Kilitli bir şey görünüyorsa açılış saatinde sayfayı kendiliğinden yeniler.
+  function acilistaYenile() {
+    if (!kilitGorundu) return;
+    var simdi = Date.now(), en = 0;
+    D.sira.forEach(function (id) { var t = acilisi(D.haftalar[id]); if (t > simdi && (!en || t < en)) en = t; });
+    if (!en || en - simdi > 2e9) return;
+    var z = setTimeout(yonlendir, en - simdi + 1000);
+    temizlik.push(function () { clearTimeout(z); });
+  }
+
+  // =========================================================
   // Sayfalar
   // =========================================================
   var AMBLEM = '<svg class="amblem" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="12" fill="currentColor" opacity=".14"/>' +
@@ -1057,13 +1168,17 @@ window.DERS = {
     document.title = 'Ahi Evran Camii · Haftalık Dersler';
     ust.className = 'ust bant';
     ust.innerHTML = '<div class="kap"><a class="marka" href="#/">' + AMBLEM + '<span>Ahi Evran Camii<small>Weekendles<span class="tr" lang="tr"> · Hafta sonu dersleri</span></small></span></a></div>';
-    var kartlar = D.sira.slice().reverse().map(function (id, i) {
+    var ilk = true;                   // "Bu hafta" rozeti açık olan en yeni haftaya
+    var kartlar = D.sira.slice().reverse().map(function (id) {
       var h = D.haftalar[id];
       if (!h) return '';
+      if (kilitli(h)) return kilitKarti(h);
+      var yeni = ilk; ilk = false;
       var y = haftaYildizi(h);
-      return '<div class="hafta-kart' + (i === 0 ? ' yeni' : '') + '">' +
+      return '<div class="hafta-kart' + (yeni ? ' yeni' : '') + '">' +
         '<div class="hafta-no"><span>Week</span><b>' + esc(h.no) + '</b><small class="tr" lang="tr">' + esc(h.no) + '. hafta</small></div>' +
-        '<div class="hafta-bilgi">' + (i === 0 ? '<span class="rozet">Deze week<span class="tr" lang="tr"> · Bu hafta</span></span>' : '') +
+        '<div class="hafta-bilgi">' + (yeni ? '<span class="rozet">Deze week<span class="tr" lang="tr"> · Bu hafta</span></span>' : '') +
+        (kilitBekliyor(h) ? '<span class="rozet kilit-rozet">' + KILIT + 'Leerlingen: op slot<span class="tr" lang="tr"> · Öğrencilere kilitli</span></span>' : '') +
         '<ul>' + h.konular.map(function (k) { return '<li class="renk-' + esc(k.renk) + '"><span class="nokta"></span>' + nl(k.ad) + '<small class="tr" lang="tr">' + tr(k.ad) + '</small></li>'; }).join('') + '</ul>' +
         '<div class="hafta-alt">' + yildizSayac(y.kazanilan, y.toplam) + '<span class="hafta-dugmeler">' +
         '<a class="yaris-d" href="#/' + esc(h.id) + '/yaris">Wedstrijd<small>Yarış</small></a>' +
@@ -1122,7 +1237,7 @@ window.DERS = {
   // =========================================================
   // Tecvid bölümü: bütün kurallar tek yerde (tecvid/kurallar.js)
   // =========================================================
-  function tecvidUst(geriAdres, geriNl, geriTr, adNl, adTr) {
+  function ustGeri(geriAdres, geriNl, geriTr, adNl, adTr) {
     ust.className = 'ust';
     ust.innerHTML = '<div class="kap"><a class="geri" href="' + geriAdres + '">‹ ' + geriNl + '<small class="tr" lang="tr">' + geriTr + '</small></a>' +
       '<span class="marka kucuk">' + adNl + '<small class="tr" lang="tr">' + adTr + '</small></span></div>';
@@ -1130,6 +1245,7 @@ window.DERS = {
   function tecvidKarisikBlok() {
     var gorulen = {}, kelimeler = [], turler = [];
     D.tecvid.kurallar.forEach(function (k) {
+      if (kuralKilitli(k)) return;      // haftası henüz açılmadıysa kelimeleri de gelmez
       k.bloklar.forEach(function (b) {
         if (b.tur !== 'medd') return;
         b.kelimeler.forEach(function (w) {
@@ -1141,12 +1257,12 @@ window.DERS = {
     });
     var sira = ['tabii', 'muttasil', 'munfasil', 'lazim', 'ariz'];
     turler.sort(function (a, b) { return sira.indexOf(a) - sira.indexOf(b); });
-    return { tur: 'medd', baslik: { nl: 'Gemengde herhaling: welke medd?', tr: 'Karışık tekrar: hangi med?' }, secenekler: turler, kelimeler: kelimeler, adet: 15 };
+    return { tur: 'medd', baslik: { nl: 'Gemengde herhaling: welke medd?', tr: 'Karışık tekrar: hangi med?' }, secenekler: turler, kelimeler: kelimeler, adet: turler.length * 3 };
   }
   function tecvidAna() {
     var T = D.tecvid;
     document.title = 'Tecvid · Ahi Evran Camii';
-    tecvidUst('#/', 'Alle weken', 'Tüm haftalar', 'Tecvidregels', 'Tecvid kuralları');
+    ustGeri('#/', 'Alle weken', 'Tüm haftalar', 'Tecvidregels', 'Tecvid kuralları');
     var karisik = tecvidKarisikBlok();
     var ky = yildizlar['tecvid:karisik:0'] || 0;
     govde.innerHTML = '<div class="tecvid-ana"><h1>Tecvid: alle regels<span class="tr" lang="tr"> · Tecvid: bütün kurallar</span></h1>' +
@@ -1156,18 +1272,24 @@ window.DERS = {
       '<span>' + karisik.adet + ' woorden van alle regels door elkaar. Goed om te oefenen voor een toets.<small class="tr" lang="tr">Bütün kurallardan karışık ' + karisik.adet + ' kelime. Sınavdan önce tekrar için.</small></span></span>' +
       '<span class="tecvid-y">' + yildizCiz(ky) + '</span><span class="ok" aria-hidden="true">›</span></a>' +
       '<ol class="kural-liste">' + T.kurallar.map(function (k, i) {
-        var y = haftaYildizi({ id: 'tecvid', konular: [k] });
-        return '<li><a class="kural-kart" href="#/tecvid/' + esc(k.id) + '"><span class="kural-no">' + (i + 1) + '</span>' +
+        var y = haftaYildizi({ id: 'tecvid', konular: [k] }), kilit = kuralKilitli(k);
+        var alt = y.toplam ? yildizSayac(y.kazanilan, y.toplam) : '';
+        if (kilit) {
+          var a = acilisYazi(acilisi(kuralHaftasi(k)));
+          kilitGorundu = true;
+          alt = '<span class="rozet kilit-rozet">' + KILIT + 'Open vanaf ' + a.kisaNl + '<span class="tr" lang="tr"> · Açılış: ' + a.kisaTr + '</span></span>';
+        }
+        return '<li><a class="kural-kart' + (kilit ? ' kilitli' : '') + '" href="#/tecvid/' + esc(k.id) + '"><span class="kural-no">' + (i + 1) + '</span>' +
           '<span class="kural-bilgi"><b>' + nl(k.ad) + '</b><small class="tr" lang="tr">' + tr(k.ad) + '</small>' +
           '<span class="kural-alt">' + (k.hafta ? '<span class="rozet">Week ' + esc(k.hafta) + '<span class="tr" lang="tr"> · ' + esc(k.hafta) + '. hafta</span></span>' : '') +
-          (y.toplam ? yildizSayac(y.kazanilan, y.toplam) : '') + '</span></span><span class="ok" aria-hidden="true">›</span></a></li>';
+          alt + '</span></span><span class="ok" aria-hidden="true">›</span></a></li>';
       }).join('') + '</ol></div>';
   }
   function tecvidKural(kural) {
     var T = D.tecvid, i = T.kurallar.indexOf(kural), onceki = T.kurallar[i - 1], sonraki = T.kurallar[i + 1];
     acik = { hafta: 'tecvid', konu: kural.id };
     document.title = nl(kural.ad) + ' · Tecvid';
-    tecvidUst('#/tecvid', 'Alle regels', 'Bütün kurallar', 'Regel ' + (i + 1), (i + 1) + '. kural');
+    ustGeri('#/tecvid', 'Alle regels', 'Bütün kurallar', 'Regel ' + (i + 1), (i + 1) + '. kural');
     govde.innerHTML = '<article class="konu renk-kuran"><header class="konu-bas"><h1>' + nl(kural.ad) + '</h1><p class="tr" lang="tr">' + tr(kural.ad) + '</p></header>' +
       bloklariCiz(kural.bloklar) +
       '<nav class="kural-gezinti">' +
@@ -1182,7 +1304,7 @@ window.DERS = {
   function tecvidKarisik() {
     acik = null;
     document.title = 'Gemengde herhaling · Tecvid';
-    tecvidUst('#/tecvid', 'Alle regels', 'Bütün kurallar', 'Herhaling', 'Karışık tekrar');
+    ustGeri('#/tecvid', 'Alle regels', 'Bütün kurallar', 'Herhaling', 'Karışık tekrar');
     var b = tecvidKarisikBlok();
     govde.innerHTML = '<article class="konu renk-kuran"><header class="konu-bas"><h1>Gemengde herhaling</h1><p class="tr" lang="tr">Karışık tekrar</p></header>' +
       '<p class="giris">Woorden van alle regels door elkaar. Elke keer andere woorden. <span class="tr" lang="tr">Bütün kurallardan karışık kelimeler. Her seferinde başka kelimeler gelir.</span></p>' +
@@ -1193,19 +1315,24 @@ window.DERS = {
   function yonlendir() {
     temizlik.forEach(function (f) { f(); });
     temizlik = [];
+    kilitGorundu = false;
     var p = location.hash.split('/');
     var h = D.haftalar[p[1]];
     if (p[1] === 'tecvid' && D.tecvid) {
       var kural = D.tecvid.kurallar.filter(function (k) { return k.id === p[2]; })[0];
-      if (kural) tecvidKural(kural);
+      if (kural && kuralKilitli(kural)) { acik = null; kalemGoster(false); kuralKilidi(kural); }
+      else if (kural) tecvidKural(kural);
       else { acik = null; kalemGoster(false); if (p[2] === 'karisik') tecvidKarisik(); else tecvidAna(); }
     }
     else if (!h) { acik = null; kalemGoster(false); anaSayfa(); }
+    else if (kilitli(h)) { acik = null; kalemGoster(false); haftaKilidi(h); }
     else if (p[2] === 'yaris') { acik = null; kalemGoster(false); yarisSayfasi(h); }
     else if (p[2] === 'zor') { acik = null; kalemGoster(false); zorSayfasi(h); }
     else haftaSayfasi(h, p[2]);
     var kap = ust.querySelector('.kap');
     if (kap && window.SES) kap.appendChild(SES.dugme());
+    hocaSeridi();
+    acilistaYenile();
     window.scrollTo(0, 0);
   }
   window.addEventListener('hashchange', yonlendir);
@@ -1225,6 +1352,12 @@ window.DERS = {
         s.onerror = function () { hatalar.push('haftalar/' + id + '.js bulunamadı.'); bitti(); };
         document.head.appendChild(s);
       });
-    })).then(yonlendir);
+    })).then(function () {
+      D.sira.forEach(function (id) {
+        var h = D.haftalar[id];
+        if (h && h.acilis && isNaN(acilisi(h))) hatalar.push('haftalar/' + id + '.js: acilis yanlış yazılmış, örnek: 2026-11-28T13:00');
+      });
+      yonlendir();
+    });
   });
 })();
