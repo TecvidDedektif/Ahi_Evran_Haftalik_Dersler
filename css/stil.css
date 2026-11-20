@@ -630,3 +630,10 @@ body.kalem-acik .ik { cursor:crosshair }
 .rozet-bildirim b { display:block; font-family:var(--f-bas); font-size:19px; line-height:1.2 }
 @keyframes rozet-gel { from { opacity:0; transform:translateY(-24px) scale(.9) } }
 @keyframes rozet-git { to { opacity:0; transform:translateY(-16px) } }
+
+/* Müzik düğmesi (canlı yarışta hocanın ekranı) */
+.muzik-d { width:40px; height:40px; flex:none; align-self:center; display:grid; place-items:center; padding:0; border:1.5px solid var(--cizgi); border-radius:50%; background:transparent; color:var(--metin); cursor:pointer }
+.muzik-d .carpi { display:none }
+.muzik-d.kapali { color:var(--soluk) }
+.muzik-d.kapali .carpi { display:inline }
+.muzik-d:focus-visible, .ses-d:focus-visible { outline:3px solid var(--kuran); outline-offset:2px }
