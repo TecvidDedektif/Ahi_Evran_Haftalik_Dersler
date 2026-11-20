@@ -637,3 +637,18 @@ body.kalem-acik .ik { cursor:crosshair }
 .muzik-d.kapali { color:var(--soluk) }
 .muzik-d.kapali .carpi { display:inline }
 .muzik-d:focus-visible, .ses-d:focus-visible { outline:3px solid var(--kuran); outline-offset:2px }
+
+/* ---------- Kelimenin sesi (Husarî) ---------- */
+.dinle { display:inline-flex; align-items:center; gap:8px; font:700 15px/1.15 var(--f); color:var(--kuran); background:var(--kart); border:1.5px solid var(--kuran); border-radius:999px; padding:6px 14px 6px 10px; margin-top:8px; cursor:pointer; text-align:left }
+.dinle svg { width:22px; height:22px; flex:none }
+.dinle small { display:block; font-weight:600; font-size:12px; color:var(--soluk) }
+.dinle:hover { background:var(--acik) }
+.dinle:focus-visible { outline:3px solid var(--kuran); outline-offset:2px }
+.dinle.caliyor { background:var(--kuran); color:var(--zemin) }
+.dinle.caliyor small { color:inherit; opacity:.85 }
+.dinle.caliyor .dalga1 { animation:dalga .9s ease-in-out infinite }
+.dinle.caliyor .dalga2 { animation:dalga .9s ease-in-out .3s infinite }
+@keyframes dalga { 0%, 100% { opacity:.25 } 50% { opacity:1 } }
+.geri-bildirim .dinle { margin-top:10px }
+.canli-aciklama .dinle { font-size:18px }
+.kunye { font-size:13px; color:var(--soluk); margin-top:10px }
