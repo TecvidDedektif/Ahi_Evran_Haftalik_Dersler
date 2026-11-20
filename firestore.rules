@@ -13,8 +13,9 @@
 //
 // Canlı yarış (derste):
 //   - Yarışı sadece hoca hesabı (kullanıcı adı "hoca") açar ve yönetir.
-//   - Çocuk sadece kendi satırına yazar: katılırken listedeki adı ve ekrandaki kod,
-//     cevaplarken o anki soruya bir kez ve süre içinde. Puanı hoca hesaplar.
+//   - Çocuk hesapsız katılır: ekrandaki kodu ve adını yazar. Cevabı o anki soruya
+//     bir kez ve süre içinde verebilir. Puanı hoca hesaplar.
+//   - Yarışı ve oyuncuları sadece kodu bilen görür; listeleme ve silme hocanın.
 
 rules_version = '2';
 service cloud.firestore {
@@ -76,47 +77,45 @@ service cloud.firestore {
     }
 
     // ---------- Canlı yarış ----------
-    match /canli/oyun {
-      allow read: if request.auth != null;
-      allow write: if hoca();
+    // canli/<kod>: yarışın durumu. Kodu bilen okur (liste yok), sadece hoca yazar.
+    match /canli/{kod} {
+      allow get: if true;
+      allow list, write: if hoca();
     }
 
-    match /canli/oyun/oyuncular/{uid} {
+    // canli/<kod>/oyuncular/<kimlik>: çocuk hesapsız katılır, adını yazar.
+    match /canli/{kod}/oyuncular/{id} {
       function oyun() {
-        return get(/databases/$(database)/documents/canli/oyun).data;
-      }
-      function sahibi() {
-        return request.auth != null && request.auth.uid == uid && listede(uid);
+        return get(/databases/$(database)/documents/canli/$(kod)).data;
       }
       function sekil() {
         let d = request.resource.data;
-        return d.keys().hasOnly(['ad', 'pin', 'cevapNo', 'secim', 'zaman'])
-          && d.keys().hasAll(['ad', 'pin', 'cevapNo', 'secim', 'zaman'])
+        return d.keys().hasOnly(['ad', 'cevapNo', 'secim', 'zaman'])
+          && d.keys().hasAll(['ad', 'cevapNo', 'secim', 'zaman'])
           && d.zaman == request.time;
       }
-      // Katılıyor: ekrandaki kod, listedeki ad, henüz cevap yok
+      // Katılıyor: uzun rastgele kimlik, 1-20 harflik ad, henüz cevap yok, yarış bitmemiş
       function katiliyor() {
         let d = request.resource.data;
-        let o = oyun();
-        return d.ad == listedekiAd(uid) && d.pin == o.pin && o.durum != 'bitti'
+        return id.size() >= 20
+          && d.ad is string && d.ad.size() >= 1 && d.ad.size() <= 20
           && d.cevapNo == -1 && d.secim == -1
-          && (resource == null || resource.data.pin != o.pin);
+          && oyun().durum != 'bitti';
       }
       // Cevaplıyor: o anki soruya, bir kez, süre içinde
       function cevapliyor() {
         let d = request.resource.data;
         let o = oyun();
-        return resource != null && resource.data.pin == o.pin
-          && d.ad == resource.data.ad && d.pin == resource.data.pin
+        return d.ad == resource.data.ad
           && o.durum == 'soru' && d.cevapNo == o.no && resource.data.cevapNo != o.no
           && d.secim is int && d.secim >= 0 && d.secim < o.secenek
           && request.time < o.basla + duration.value(o.sure + 2, 's');
       }
 
-      allow get: if (request.auth != null && request.auth.uid == uid) || hoca();
+      allow get: if true;
       allow list, delete: if hoca();
-      allow create: if sahibi() && sekil() && katiliyor();
-      allow update: if sahibi() && sekil() && (katiliyor() || cevapliyor());
+      allow create: if sekil() && katiliyor();
+      allow update: if sekil() && cevapliyor();
     }
   }
 }

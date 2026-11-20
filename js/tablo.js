@@ -17,10 +17,11 @@
        deneme       bu hafta kaç kez oynandı
 
    Canlı yarış (derste büyük ekran + telefonlar):
-     canli/oyun                       { pin, durum, hafta, no, toplam, sure, basla, soru, secenekler,
+     canli/<kod>                      { durum, hafta, no, toplam, sure, basla, soru, secenekler,
                                         secenek, dogruSecim, dagilim, oyuncular }   sadece hoca yazar
        durum: bekle (katılım) | soru | cevap (sonuç gösteriliyor) | bitti
-     canli/oyun/oyuncular/<uid>       { ad, pin, cevapNo, secim, zaman }   çocuk kendi satırını yazar
+     canli/<kod>/oyuncular/<kimlik>   { ad, cevapNo, secim, zaman }   çocuk hesapsız katılır
+     Kod 4 hanelidir; yarışı sadece kodu bilen okuyabilir.
      Hoca, kullanıcı adı "hoca" olan hesaptır (hoca@ahievran.example).
 
    Günde bir hak: deneme oyun BAŞLARKEN sunucuya yazılır. Kurallar aynı gün
@@ -198,7 +199,8 @@ window.TABLO = (function () {
   }
 
   // ---------- Canlı yarış ----------
-  var OYUN = 'canli/oyun', OYUNCU = 'canli/oyun/oyuncular';
+  // canli/<kod>                      yarışın durumu; kodu bilen okur, sadece hoca yazar
+  // canli/<kod>/oyuncular/<kimlik>   çocuk hesapsız katılır: rastgele kimlik + yazdığı ad
   function kodla(v) {
     if (v === null || v === undefined) return { nullValue: null };
     if (typeof v === 'boolean') return { booleanValue: v };
@@ -224,10 +226,17 @@ window.TABLO = (function () {
   function alanlar(f) { var o = {}; Object.keys(f || {}).forEach(function (k) { o[k] = coz(f[k]); }); return o; }
   // Tarih alanları (basla) ms olarak gelir; geri yazarken Date olur.
   function oyunKodla(o) { var k = {}; Object.keys(o).forEach(function (a) { k[a] = a === 'basla' && typeof o[a] === 'number' ? new Date(o[a]) : o[a]; }); return k; }
-  function yetkiliOku(yol) {
-    return token().then(function (t) { return iste(taban() + '/' + yol + anahtar() + (yol === OYUNCU ? '&pageSize=300' : ''), { headers: { Authorization: 'Bearer ' + t } }); });
+  function oyunYolu(kod) { return 'canli/' + encodeURIComponent(kod); }
+  function oyuncuYolu(kod, id) { return oyunYolu(kod) + '/oyuncular' + (id ? '/' + encodeURIComponent(id) : ''); }
+  function acikOku(yol) { return iste(taban() + '/' + yol + anahtar()); }                        // giriş gerekmez
+  function hocaOku(yol, ek) {
+    return token().then(function (t) { return iste(taban() + '/' + yol + anahtar() + (ek || ''), { headers: { Authorization: 'Bearer ' + t } }); });
   }
-  function yazilar(w) { return token().then(function (t) { return jsonGonder(taban() + ':commit' + anahtar(), { writes: w }, t); }); }
+  function belgeler(r) { return (((r.json || {}).documents) || []).map(function (d) { var o = alanlar(d.fields); o.id = String(d.name).split('/').pop(); o.yol = d.name; return o; }); }
+  function yazilar(w, hocaMi) {
+    if (!hocaMi) return jsonGonder(taban() + ':commit' + anahtar(), { writes: w });
+    return token().then(function (t) { return jsonGonder(taban() + ':commit' + anahtar(), { writes: w }, t); });
+  }
   function guncelleme(yol, nesne, maske, zamanlar) {
     var f = {}; Object.keys(nesne).forEach(function (k) { f[k] = kodla(nesne[k]); });
     var w = { update: { name: veriYolu() + '/' + yol, fields: f } };
@@ -236,44 +245,47 @@ window.TABLO = (function () {
     return w;
   }
   var canli = {
-    // Yarışın durumu; yoksa null
-    oyun: function () { return yetkiliOku(OYUN).then(function (r) { return r.durum === 404 ? null : alanlar(r.json.fields); }); },
-    // Bu çocuğun satırı; yoksa null
-    benim: function (uid) { return yetkiliOku(OYUNCU + '/' + encodeURIComponent(uid)).then(function (r) { return r.durum === 404 ? null : alanlar(r.json.fields); }); },
+    // Herkes: yarışın durumu; kod yanlışsa ya da yarış silindiyse null
+    oyun: function (kod) { return acikOku(oyunYolu(kod)).then(function (r) { return r.durum === 404 ? null : alanlar(r.json.fields); }); },
+    // Çocuk: kendi satırı; çıkarıldıysa null
+    benim: function (kod, id) { return acikOku(oyuncuYolu(kod, id)).then(function (r) { return r.durum === 404 ? null : alanlar(r.json.fields); }); },
+    // Çocuk: yarışa katılır (hesapsız)
+    katil: function (kod, id, ad) { return yazilar([guncelleme(oyuncuYolu(kod, id), { ad: ad, cevapNo: -1, secim: -1 }, null, ['zaman'])]); },
+    // Çocuk: o anki soruya cevap
+    cevapla: function (kod, id, no, secim) { return yazilar([guncelleme(oyuncuYolu(kod, id), { cevapNo: no, secim: secim }, ['cevapNo', 'secim'], ['zaman'])]); },
     // Hoca: bütün oyuncular
-    oyuncular: function () {
-      return yetkiliOku(OYUNCU).then(function (r) {
-        return (((r.json || {}).documents) || []).map(function (d) { var o = alanlar(d.fields); o.uid = String(d.name).split('/').pop(); return o; });
-      });
-    },
+    oyuncular: function (kod) { return hocaOku(oyuncuYolu(kod), '&pageSize=300').then(belgeler); },
     // Hoca: bu soruya kaç kişi cevap verdi (ucuz sayım)
-    cevapSayisi: function (no) {
+    cevapSayisi: function (kod, no) {
       var q = { structuredAggregationQuery: {
         structuredQuery: { from: [{ collectionId: 'oyuncular' }], where: { fieldFilter: { field: { fieldPath: 'cevapNo' }, op: 'EQUAL', value: { integerValue: String(no) } } } },
         aggregations: [{ alias: 'n', count: {} }] } };
-      return token().then(function (t) { return jsonGonder(taban() + '/' + OYUN + ':runAggregationQuery' + anahtar(), q, t); }).then(function (r) {
+      return token().then(function (t) { return jsonGonder(taban() + '/' + oyunYolu(kod) + ':runAggregationQuery' + anahtar(), q, t); }).then(function (r) {
         var a = (r.json || [])[0];
         return a && a.result && a.result.aggregateFields ? coz(a.result.aggregateFields.n) : 0;
       });
     },
     // Hoca: yarışın bütün durumunu yazar. basla=true ise soru sunucu saatiyle başlar; dönüş: o an (ms)
-    yaz: function (o, basla) {
-      return yazilar([guncelleme(OYUN, oyunKodla(o), null, basla ? ['basla'] : null)]).then(function (r) {
+    yaz: function (kod, o, basla) {
+      return yazilar([guncelleme(oyunYolu(kod), oyunKodla(o), null, basla ? ['basla'] : null)], true).then(function (r) {
         var w = (((r.json || {}).writeResults) || [])[0] || {}, d = (w.transformResults || [])[0];
         return d && d.timestampValue ? Date.parse(d.timestampValue) : null;
       });
     },
-    // Hoca: önceki yarışın oyuncularını siler
+    // Hoca: bir oyuncuyu çıkarır
+    cikar: function (kod, id) { return yazilar([{ delete: veriYolu() + '/' + oyuncuYolu(kod, id) }], true); },
+    // Hoca: önceki bütün yarışları ve oyuncularını siler (isimler sunucuda kalmasın)
     temizle: function () {
-      return canli.oyuncular().then(function (l) {
-        if (!l.length) return;
-        return yazilar(l.map(function (o) { return { delete: veriYolu() + '/' + OYUNCU + '/' + o.uid }; }));
+      return hocaOku('canli', '&pageSize=50').then(function (r) {
+        var oyunlar = belgeler(r);
+        return Promise.all(oyunlar.map(function (o) { return hocaOku(oyuncuYolu(o.id), '&pageSize=300').then(belgeler); })).then(function (l) {
+          var w = [];
+          l.forEach(function (oy) { oy.forEach(function (x) { w.push({ delete: x.yol }); }); });
+          oyunlar.forEach(function (o) { w.push({ delete: o.yol }); });
+          if (w.length) return yazilar(w, true);
+        });
       });
     },
-    // Çocuk: yarışa katılır (ad hocanın listesinden)
-    katil: function (ogr, pin) { return yazilar([guncelleme(OYUNCU + '/' + ogr.uid, { ad: ogr.ad, pin: pin, cevapNo: -1, secim: -1 }, null, ['zaman'])]); },
-    // Çocuk: o anki soruya cevap
-    cevapla: function (uid, no, secim) { return yazilar([guncelleme(OYUNCU + '/' + uid, { cevapNo: no, secim: secim }, ['cevapNo', 'secim'], ['zaman'])]); },
   };
 
   return { hesap: hesap, girisYap: girisYap, cikis: cikis, ogrenci: ogrenci, durum: durum, basla: basla, bitir: bitir, oku: liste, yeniHak: yeniHak, canli: canli, ayar: AYAR };

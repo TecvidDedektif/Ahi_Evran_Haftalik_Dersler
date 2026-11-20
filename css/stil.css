@@ -482,7 +482,10 @@ body.kalem-acik .ik { cursor:crosshair }
 .adres { margin:12px 0 0; font-size:15px; opacity:.75; overflow-wrap:anywhere }
 .lobi-alt h2 { font-family:var(--f-bas); font-weight:800; font-size:clamp(22px,3vw,30px); margin:0 0 10px }
 .lobi-alt h2 .tr { font-weight:600 }
-.oyuncular.canli-oyuncular li { padding:8px 16px; font-size:clamp(17px,2vw,22px); animation:balon-gir .25s ease-out }
+.oyuncular.canli-oyuncular li { padding:6px 6px 6px 16px; font-size:clamp(17px,2vw,22px); animation:balon-gir .25s ease-out }
+.canli-oyuncular .cikar { width:30px; height:30px; font-size:15px; color:var(--soluk) }
+.canli-oyuncular .cikar:hover, .canli-oyuncular .cikar:focus-visible { color:var(--no) }
+.hoca-link { text-align:center }
 .canli-dugmeler { display:grid; gap:4px; justify-items:center; margin-top:18px }
 .canli-dugmeler .dugme.buyuk { max-width:520px }
 
