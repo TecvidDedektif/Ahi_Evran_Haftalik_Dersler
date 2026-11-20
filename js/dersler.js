@@ -10,7 +10,7 @@
      #/hafta-10/sabir      haftanın "sabir" konusu
      #/hafta-10/yaris      yarış sayfası: ortak puan tablosu + sınıf yarışı
      #/hafta-10/zor        zor yarış: tek kişilik, 20 soru, puan tabloya gönderilebilir
-     #/canli               canlı yarış: hoca büyük ekranda açar, çocuklar telefondan katılır
+     #/canli               canlı yarış: hoca büyük ekranda açar, çocuklar kod ve adla katılır
      #/rozetler            kazanılan ve kazanılacak rozetler
      #/tecvid              tecvid bölümü: bütün kurallar
      #/tecvid/ariz         bir kural
@@ -41,6 +41,7 @@
      dersler-hesap    Zor yarış oturumu (çıkış yapınca silinir)
      dersler-hoca     hoca modu (sadece bu sekmede; tarayıcı kapanınca silinir)
      dersler-canli    hocanın ekranında yarım kalan canlı yarış (sorular ve sıra)
+     dersler-canli-ben  canlı yarışta çocuğun kodu, rastgele kimliği ve adı
      dersler-rozet    rozetler ve onlar için sayılanlar (okunan hikâyeler, yarışlar, haftalar)
    ============================================================ */
 
@@ -1176,7 +1177,8 @@ window.DERS = {
   // =========================================================
   // Canlı yarış: derste büyük ekran + çocukların telefonları
   //   Hoca büyük ekranda "hoca" hesabıyla girer, haftayı seçip yarışı açar; ekranda 4 haneli kod çıkar.
-  //   Çocuk telefonda kendi hesabıyla girer ve kodu yazar. Soru büyük ekranda, cevap telefonda.
+  //   Çocuk telefonda hesapsız katılır: kodu ve adını yazar. Hoca lobide bir ismi çıkarabilir.
+  //   Soru büyük ekranda, cevap telefonda. Yeni yarış açılınca öncekiler ve isimler silinir.
   //   Doğru cevap 500-1000 puan: ne kadar hızlıysa o kadar çok. Puanı hocanın ekranı hesaplar.
   //   Yarım kalan yarış (ekran yenilenirse) bu cihazda saklanır: dersler-canli.
   // =========================================================
@@ -1253,46 +1255,41 @@ window.DERS = {
     }
     function ag(var_) { var el = govde.querySelector('.canli-ag'); if (el) el.hidden = var_; }
     function yukleniyor() { govde.innerHTML = '<div class="canli"><p class="sayac">Laden…<span class="tr" lang="tr"> · Yükleniyor…</span></p></div>'; }
-    function hataEkrani(e, yeniden, hocaMi) {
+    function yetkiYok(e) { return e && e.durum === 403 ? 'Geen toegang. Zijn de nieuwe regels in Firebase gepubliceerd? <span class="tr" lang="tr">Yetki yok. Yeni kurallar Firebase’de yayınlandı mı?</span>' : baglantiHatasi(e); }
+    function hataEkrani(e, yeniden) {
       yeni();
-      var m = hocaMi && e && e.durum === 403
-        ? 'Geen toegang. Zijn de nieuwe regels in Firebase gepubliceerd? <span class="tr" lang="tr">Yetki yok. Yeni kurallar Firebase’de yayınlandı mı?</span>'
-        : baglantiHatasi(e);
-      govde.innerHTML = '<div class="canli"><section class="blok"><p class="uyari">' + m + '</p><button type="button" class="dugme kucuk yeniden">Opnieuw proberen<small>Tekrar dene</small></button></section></div>';
+      govde.innerHTML = '<div class="canli"><section class="blok"><p class="uyari">' + yetkiYok(e) + '</p><button type="button" class="dugme kucuk yeniden">Opnieuw proberen<small>Tekrar dene</small></button></section></div>';
       govde.querySelector('.yeniden').addEventListener('click', yeniden);
     }
-    function cikisBagla() {
-      var c = govde.querySelector('.cikis');
-      if (c) c.addEventListener('click', function () { T.cikis(); giris(); });
-    }
+    function hocaMi() { return (T.hesap() || {}).kullanici === 'hoca'; }
 
-    if (T.hesap()) basla(); else giris();
-    function basla() { if ((T.hesap() || {}).kullanici === 'hoca') hocaBasla(); else ogrenciBasla(); }
-    function giris(uyari) {
+    // Hoca girişi: çocuk ekranının altındaki "Hoca mısın?" ile açılır
+    function hocaGiris(uyari) {
       yeni();
-      document.body.classList.remove('genis');
-      govde.innerHTML = '<div class="canli"><h1>Live wedstrijd<span class="tr" lang="tr"> · Canlı yarış</span></h1>' +
-        '<p class="giris">Speel mee in de les: de vragen staan op het grote scherm, jij antwoordt op je telefoon. Log in met je account. ' +
-        '<span class="tr" lang="tr">Derste birlikte oyna: sorular büyük ekranda, sen telefonundan cevaplarsın. Hesabınla giriş yap.</span></p>' +
-        girisKutusu(uyari) + '</div>';
-      girisBagla(basla, giris, uyari);
+      govde.innerHTML = '<div class="canli"><h1>Leraar<span class="tr" lang="tr"> · Hoca girişi</span></h1>' +
+        '<p class="giris">Log in met het leraaraccount om een wedstrijd te openen. <span class="tr" lang="tr">Yarış açmak için hoca hesabıyla gir.</span></p>' +
+        girisKutusu(uyari) + '<p class="not"><button type="button" class="dugme kucuk geri-d">Terug<small>Geri</small></button></p></div>';
+      girisBagla(function () {
+        if (hocaMi()) hocaBasla();
+        else { T.cikis(); hocaGiris('Dit is geen leraaraccount. <span class="tr" lang="tr">Bu bir hoca hesabı değil.</span>'); }
+      }, hocaGiris, uyari);
+      govde.querySelector('.geri-d').addEventListener('click', function () { ogrenciBasla(); });
     }
 
     // =====================================================
     // Hoca: büyük ekran
     // =====================================================
-    var plan = null, oyun = null;      // plan: sorular ve sıra (bu cihazda); oyun: sunucudaki durum
+    var plan = null, oyun = null;      // plan: kod, sorular ve sıra (bu cihazda); oyun: sunucudaki durum
     function planKaydet() { plan.oyun = oyun; canliPlanYaz(plan); }
 
     function hocaBasla() {
       document.body.classList.add('genis');
-      var n = yeni();
+      var n = yeni(), p = canliPlanOku();
       yukleniyor();
-      C.oyun().then(function (o) {
+      (p && p.pin && p.oyun ? C.oyun(p.pin) : Promise.resolve(null)).then(function (o) {
         if (!suAn(n)) return;
-        var p = canliPlanOku();
-        kurulum(o && p && p.oyun && p.pin === o.pin && o.durum !== 'bitti' ? p : null);
-      }, function (e) { hataEkrani(e, hocaBasla, true); });
+        kurulum(o && o.durum !== 'bitti' ? p : null);
+      }, function (e) { hataEkrani(e, hocaBasla); });
     }
 
     function varsayilanHafta() {
@@ -1336,7 +1333,7 @@ window.DERS = {
         govde.querySelector('.ac').addEventListener('click', ac);
         var dv = govde.querySelector('.devam');
         if (dv) dv.addEventListener('click', function () { plan = yarim; oyun = yarim.oyun; devamEt(); });
-        cikisBagla();
+        govde.querySelector('.cikis').addEventListener('click', function () { T.cikis(); document.body.classList.remove('genis'); ogrenciBasla(); });
       }
       function ac() {
         var h = D.haftalar[secim.hafta], sorular = canliSorular(h, secim.zor, secim.adet);
@@ -1348,13 +1345,14 @@ window.DERS = {
         plan = { pin: pin, hafta: h.id, sorular: sorular, no: 0 };
         oyun = { pin: pin, durum: 'bekle', hafta: h.id, no: -1, toplam: sorular.length, sure: secim.sure, secenek: 0, basla: null,
           soru: null, secenekler: [], dogruSecim: -1, dagilim: [], oyuncular: {} };
-        C.temizle().then(function () { return C.yaz(oyun, false); }).then(function () {
+        // Önceki yarışlar ve isimler silinir, sonra yenisi açılır
+        C.temizle().then(function () { return C.yaz(pin, oyun, false); }).then(function () {
           if (!suAn(n)) return;
           planKaydet(); lobi();
         }, function (e) {
           if (!suAn(n)) return;
           d.disabled = false; d.innerHTML = 'Wedstrijd openen<small>Yarışı aç</small>';
-          uy.innerHTML = e && e.durum === 403 ? 'Geen toegang. Zijn de nieuwe regels in Firebase gepubliceerd? <span class="tr" lang="tr">Yetki yok. Yeni kurallar Firebase’de yayınlandı mı?</span>' : baglantiHatasi(e);
+          uy.innerHTML = yetkiYok(e);
         });
       }
       ciz();
@@ -1371,34 +1369,47 @@ window.DERS = {
       var adres = location.host + location.pathname.replace(/index\.html$/, '');
       govde.innerHTML = '<div class="canli hoca-ekran lobi">' +
         '<div class="pin-kutu"><p>Code<span class="tr" lang="tr"> · Kod</span></p><b class="pin" aria-label="Code ' + esc(oyun.pin) + '">' + esc(oyun.pin) + '</b>' +
-        '<p class="nasil">Op je telefoon: open de site, tik op <b>Live wedstrijd</b> en typ de code.<span class="tr" lang="tr">Telefonunda siteyi aç, <b>Canlı yarış</b>’a dokun ve kodu yaz.</span></p>' +
+        '<p class="nasil">Op je telefoon: open de site, tik op <b>Live wedstrijd</b>, typ de code en je naam.<span class="tr" lang="tr">Telefonunda siteyi aç, <b>Canlı yarış</b>’a dokun, kodu ve adını yaz.</span></p>' +
         '<p class="adres">' + esc(adres) + '</p></div>' +
         '<div class="lobi-alt"><h2><span class="oyuncu-sayi">0</span> spelers<span class="tr" lang="tr"> · oyuncu</span></h2>' +
         '<ul class="oyuncular canli-oyuncular" aria-live="polite"></ul>' +
-        '<p class="not bos-not">Nog niemand. Wacht even… <span class="tr" lang="tr">Henüz kimse yok. Biraz bekle…</span></p></div>' + CANLI_AG +
+        '<p class="not bos-not">Nog niemand. Wacht even… <span class="tr" lang="tr">Henüz kimse yok. Biraz bekle…</span></p>' +
+        '<p class="not cikar-not" hidden>Tik op ✕ om een naam weg te halen. <span class="tr" lang="tr">Bir ismi çıkarmak için ✕’e dokun.</span></p></div>' + CANLI_AG +
         '<div class="canli-dugmeler"><button type="button" class="dugme ana buyuk baslat" disabled>Start de wedstrijd<small>Yarışı başlat</small></button>' +
         '<button type="button" class="dugme kucuk iptal">Stoppen<small>Vazgeç</small></button></div></div>';
-      var liste = govde.querySelector('.canli-oyuncular'), bas = govde.querySelector('.baslat');
+      var liste = govde.querySelector('.canli-oyuncular'), bas = govde.querySelector('.baslat'), cikan = {}, sonHtml = '';
+      function ciz() {
+        var l = katilan.filter(function (p) { return !cikan[p.id]; });
+        var html = l.map(function (p) { return '<li data-id="' + esc(p.id) + '">' + esc(p.ad) + '<button type="button" class="cikar" aria-label="' + esc(p.ad) + ' verwijderen · çıkar">✕</button></li>'; }).join('');
+        if (sonHtml !== html) { liste.innerHTML = html; sonHtml = html; }      // değişmediyse dokunma (titremesin)
+        govde.querySelector('.oyuncu-sayi').textContent = l.length;
+        govde.querySelector('.bos-not').hidden = l.length > 0;
+        govde.querySelector('.cikar-not').hidden = !l.length;
+        bas.disabled = !l.length;
+        return l;
+      }
+      liste.addEventListener('click', function (e) {
+        var b = e.target.closest('.cikar'); if (!b) return;
+        var id = b.parentNode.dataset.id;
+        cikan[id] = 1; ciz();
+        C.cikar(oyun.pin, id).catch(function () { delete cikan[id]; ciz(); });
+      });
       dongu(n, CANLI.lobiOkuma, function () {
-        return C.oyuncular().then(function (l) {
+        return C.oyuncular(oyun.pin).then(function (l) {
           if (!suAn(n)) return;
-          katilan = l.filter(function (p) { return p.pin === oyun.pin; }).sort(function (a, b) { return (a.zaman || 0) - (b.zaman || 0); });
-          var once = liste.children.length, yeniHtml = katilan.map(function (p) { return '<li>' + esc(p.ad) + '</li>'; }).join('');
-          if (liste.innerHTML !== yeniHtml) liste.innerHTML = yeniHtml;      // değişmediyse dokunma (titremesin)
-          govde.querySelector('.oyuncu-sayi').textContent = katilan.length;
-          govde.querySelector('.bos-not').hidden = katilan.length > 0;
-          bas.disabled = !katilan.length;
+          var once = katilan.length;
+          katilan = l.sort(function (a, b) { return (a.zaman || 0) - (b.zaman || 0); });
+          ciz();
           if (katilan.length > once && window.SES) SES.cal('adim');
         });
       });
       bas.addEventListener('click', function () {
-        katilan.forEach(function (p) { if (!oyun.oyuncular[p.uid]) oyun.oyuncular[p.uid] = { ad: p.ad, puan: 0, son: 0, dogru: false, secim: -1 }; });
+        ciz().forEach(function (p) { if (!oyun.oyuncular[p.id]) oyun.oyuncular[p.id] = { ad: p.ad, puan: 0, son: 0, dogru: false, secim: -1 }; });
         plan.no = 0; soruBaslat();
       });
       govde.querySelector('.iptal').addEventListener('click', function () {
         var m = yeni();
-        oyun.durum = 'bitti';
-        C.yaz(oyun, false).then(function () { if (suAn(m)) { canliPlanYaz(null); kurulum(null); } }, function (e) { hataEkrani(e, lobi, true); });
+        C.temizle().then(function () { if (suAn(m)) { canliPlanYaz(null); kurulum(null); } }, function (e) { hataEkrani(e, lobi); });
       });
     }
 
@@ -1408,10 +1419,10 @@ window.DERS = {
       var o = JSON.parse(JSON.stringify(oyun));
       o.durum = 'soru'; o.no = plan.no; o.secenek = s.secenekler.length; o.dogruSecim = -1; o.dagilim = []; o.basla = null;
       o.soru = { nl: s.soru.nl, tr: s.soru.tr, ar: s.ar || '' }; o.secenekler = s.secenekler;
-      C.yaz(o, true).then(function (bas) {
+      C.yaz(o.pin, o, true).then(function (bas) {
         if (!suAn(n)) return;
         o.basla = bas || Date.now(); oyun = o; planKaydet(); soruEkrani();
-      }, function (e) { hataEkrani(e, soruBaslat, true); });
+      }, function (e) { hataEkrani(e, soruBaslat); });
     }
     function canliUst(s) {
       return '<div class="canli-ust"><span class="soru-no">Vraag ' + (oyun.no + 1) + ' / ' + oyun.toplam + '<span class="tr" lang="tr"> · Soru ' + (oyun.no + 1) + ' / ' + oyun.toplam + '</span></span>' +
@@ -1440,7 +1451,7 @@ window.DERS = {
         if (k <= 0) sureBitti(true);
       }, 100);
       dongu(n, CANLI.okuma, function () {
-        return C.cevapSayisi(oyun.no).then(function (c) {
+        return C.cevapSayisi(oyun.pin, oyun.no).then(function (c) {
           if (!suAn(n) || bitti) return;
           govde.querySelector('.cevap-sayi b').textContent = c;
           if (kac && c >= kac) sureBitti(false);
@@ -1460,12 +1471,11 @@ window.DERS = {
     function topla() {
       var n = yeni(), s = plan.sorular[oyun.no];
       var o = JSON.parse(JSON.stringify(oyun)), dag = s.secenekler.map(function () { return 0; });
-      C.oyuncular().then(function (l) {
+      C.oyuncular(o.pin).then(function (l) {
         if (!suAn(n)) return;
-        Object.keys(o.oyuncular).forEach(function (uid) { var x = o.oyuncular[uid]; x.son = 0; x.dogru = false; x.secim = -1; });
+        Object.keys(o.oyuncular).forEach(function (id) { var x = o.oyuncular[id]; x.son = 0; x.dogru = false; x.secim = -1; });
         l.forEach(function (p) {
-          if (p.pin !== o.pin) return;
-          var x = o.oyuncular[p.uid] || (o.oyuncular[p.uid] = { ad: p.ad, puan: 0, son: 0, dogru: false, secim: -1 });
+          var x = o.oyuncular[p.id] || (o.oyuncular[p.id] = { ad: p.ad, puan: 0, son: 0, dogru: false, secim: -1 });
           x.ad = p.ad;
           if (p.cevapNo !== o.no || !(p.secim >= 0 && p.secim < dag.length)) return;
           dag[p.secim]++; x.secim = p.secim;
@@ -1475,8 +1485,8 @@ window.DERS = {
           x.puan += x.son; x.dogru = true;
         });
         o.durum = 'cevap'; o.dogruSecim = s.dogru; o.dagilim = dag;
-        return C.yaz(o, false).then(function () { if (!suAn(n)) return; oyun = o; planKaydet(); sonucEkrani(); });
-      }).catch(function (e) { if (suAn(n)) hataEkrani(e, topla, true); });
+        return C.yaz(o.pin, o, false).then(function () { if (!suAn(n)) return; oyun = o; planKaydet(); sonucEkrani(); });
+      }).catch(function (e) { if (suAn(n)) hataEkrani(e, topla); });
     }
     function sonucEkrani() {
       var n = yeni(), s = plan.sorular[oyun.no], son = oyun.no + 1 >= oyun.toplam;
@@ -1500,7 +1510,7 @@ window.DERS = {
     function bitir() {
       var n = yeni(), o = JSON.parse(JSON.stringify(oyun));
       o.durum = 'bitti';
-      C.yaz(o, false).then(function () { if (!suAn(n)) return; oyun = o; canliPlanYaz(null); podyum(); }, function (e) { hataEkrani(e, bitir, true); });
+      C.yaz(o.pin, o, false).then(function () { if (!suAn(n)) return; oyun = o; canliPlanYaz(null); podyum(); }, function (e) { hataEkrani(e, bitir); });
     }
     function podyum() {
       yeni();
@@ -1519,85 +1529,108 @@ window.DERS = {
     }
 
     // =====================================================
-    // Çocuk: telefon
+    // Çocuk: telefon. Hesap yok: kod + ad. Kimlik ve ad bu cihazda saklanır (dersler-canli-ben).
     // =====================================================
-    var ogr = null, pinim = null;
-    function ogrenciBasla() {
-      var n = yeni();
-      yukleniyor();
-      T.ogrenci().then(function (o) {
-        ogr = o;
-        return Promise.all([C.oyun(), C.benim(o.uid)]);
-      }).then(function (r) {
-        if (!suAn(n)) return;
-        var o = r[0], b = r[1];
-        if (o && b && b.pin === o.pin && o.durum !== 'bitti') { pinim = o.pin; oyunda(); } else pinEkrani();
-      }, function (e) {
-        if (!suAn(n)) return;
-        if (e && e.kod === 'LISTEDE_YOK') {
-          govde.innerHTML = '<div class="canli"><section class="blok"><p class="uyari">Je account staat nog niet op de klassenlijst. Vraag het aan je leraar. <span class="tr" lang="tr">Hesabın henüz sınıf listesinde değil. Hocana söyle.</span></p>' +
-            '<button type="button" class="dugme kucuk cikis">Uitloggen<small>Çıkış</small></button></section></div>';
-          cikisBagla();
-        } else if (!T.hesap()) giris('Log opnieuw in. <span class="tr" lang="tr">Tekrar giriş yap.</span>');
-        else hataEkrani(e, ogrenciBasla);
-      });
+    var ben = oku('dersler-canli-ben', {}) || {};
+    function benKaydet() { yaz('dersler-canli-ben', ben); }
+    function rastgeleKimlik() {
+      var a = new Uint8Array(12);
+      (window.crypto || window.msCrypto).getRandomValues(a);
+      return Array.prototype.map.call(a, function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
     }
-    function pinEkrani(uyari) {
+    function adTemizle(s) { return String(s || '').replace(/[\u0000-\u001f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 20); }
+
+    function ogrenciBasla() {
+      document.body.classList.remove('genis');
+      var n = yeni();
+      if (!ben.pin || !ben.id) { katilEkrani(); return; }
+      yukleniyor();
+      // Sayfa yenilendiyse: aynı yarışta hâlâ varsa kod sormadan devam
+      Promise.all([C.oyun(ben.pin), C.benim(ben.pin, ben.id)]).then(function (r) {
+        if (!suAn(n)) return;
+        if (r[0] && r[1] && r[0].durum !== 'bitti') oyunda(r[1]); else katilEkrani();
+      }, function () { if (suAn(n)) katilEkrani(); });
+    }
+    function katilEkrani(uyari) {
       var n = yeni();
       govde.innerHTML = '<div class="canli"><h1>Live wedstrijd<span class="tr" lang="tr"> · Canlı yarış</span></h1>' +
-        '<p class="giris">Hoi ' + esc(ogr.ad) + '! Typ de code die op het grote scherm staat. <span class="tr" lang="tr">Selam! Büyük ekrandaki kodu yaz.</span></p>' +
-        '<section class="blok"><form class="giris-form pin-form" novalidate><label for="pin">Code<span class="tr" lang="tr"> · Kod</span></label>' +
+        '<p class="giris">Typ de code van het grote scherm en je voornaam. <span class="tr" lang="tr">Büyük ekrandaki kodu ve adını yaz.</span></p>' +
+        '<section class="blok"><form class="giris-form katil-form" novalidate>' +
+        '<label for="pin">Code<span class="tr" lang="tr"> · Kod</span></label>' +
         '<input id="pin" class="pin-giris" type="text" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]*">' +
+        '<label for="ad">Je voornaam<span class="tr" lang="tr"> · Adın</span></label>' +
+        '<input id="ad" type="text" autocomplete="given-name" autocapitalize="words" maxlength="20" spellcheck="false" value="' + esc(ben.ad || '') + '">' +
         '<p class="uyari" role="alert">' + (uyari || '') + '</p>' +
         '<button type="submit" class="dugme ana buyuk">Doe mee<small>Katıl</small></button></form></section>' +
-        '<p class="not">Ingelogd als ' + esc(ogr.ad) + '. <button type="button" class="dugme kucuk cikis">Uitloggen<small>Çıkış</small></button></p></div>';
-      cikisBagla();
-      var form = govde.querySelector('.pin-form'), giris_ = form.querySelector('#pin');
-      if (!('ontouchstart' in window)) giris_.focus({ preventScroll: true });
+        '<p class="not">Je naam staat alleen tijdens de wedstrijd op het grote scherm. <span class="tr" lang="tr">Adın sadece yarış boyunca büyük ekranda görünür.</span></p>' +
+        '<p class="not hoca-link"><button type="button" class="dugme kucuk hoca-d">Leraar?<small>Hoca mısın?</small></button></p></div>';
+      govde.querySelector('.hoca-d').addEventListener('click', function () { hocaGiris(); });
+      var form = govde.querySelector('.katil-form'), pinG = form.querySelector('#pin'), adG = form.querySelector('#ad');
+      if (!('ontouchstart' in window)) pinG.focus({ preventScroll: true });
       form.addEventListener('submit', function (e) {
         e.preventDefault();
-        var pin = giris_.value.replace(/\D/g, ''), d = form.querySelector('button'), uy = form.querySelector('.uyari');
-        if (pin.length !== 4) { uy.innerHTML = 'De code heeft 4 cijfers. <span class="tr" lang="tr">Kod 4 rakamlı.</span>'; return; }
+        var pin = pinG.value.replace(/\D/g, ''), ad = adTemizle(adG.value), d = form.querySelector('button[type=submit]'), uy = form.querySelector('.uyari');
+        if (pin.length !== 4) { uy.innerHTML = 'De code heeft 4 cijfers. <span class="tr" lang="tr">Kod 4 rakamlı.</span>'; pinG.focus(); return; }
+        if (!ad) { uy.innerHTML = 'Typ je voornaam. <span class="tr" lang="tr">Adını yaz.</span>'; adG.focus(); return; }
         d.disabled = true; d.innerHTML = 'Bezig…<small>Katılıyor…</small>';
-        Promise.all([C.oyun(), C.benim(ogr.uid)]).then(function (r) {
-          var o = r[0], b = r[1];
-          if (!o || o.durum === 'bitti') throw { kod: 'YOK' };
-          if (o.pin !== pin) throw { kod: 'PIN' };
-          if (b && b.pin === pin) return;                 // zaten katılmış (sayfa yenilendi)
-          return C.katil(ogr, pin);
-        }).then(function () { if (suAn(n)) { pinim = pin; oyunda(); } }, function (x) {
+        C.oyun(pin).then(function (o) {
+          if (!o) throw { kod: 'PIN' };
+          if (o.durum === 'bitti') throw { kod: 'BITTI' };
+          if (ben.pin === pin && ben.id) return C.benim(pin, ben.id).then(function (b) { if (b) return b; return yeniKatil(); });
+          return yeniKatil();
+          function yeniKatil() {
+            var id = rastgeleKimlik();
+            return C.katil(pin, id, ad).then(function () { ben.id = id; return { ad: ad, cevapNo: -1, secim: -1 }; });
+          }
+        }).then(function (b) {
           if (!suAn(n)) return;
-          pinEkrani(x.kod === 'YOK' ? 'Er is nu geen wedstrijd. Wacht tot je leraar hem opent. <span class="tr" lang="tr">Şu an yarış yok. Hocan açınca tekrar dene.</span>'
-            : x.kod === 'PIN' ? 'Deze code klopt niet. Kijk nog eens naar het scherm. <span class="tr" lang="tr">Kod yanlış. Ekrana tekrar bak.</span>'
+          ben.pin = pin; ben.ad = b.ad || ad; benKaydet();
+          oyunda(b);
+        }, function (x) {
+          if (!suAn(n)) return;
+          katilEkrani(x.kod === 'PIN' ? 'Deze code bestaat niet. Kijk nog eens naar het scherm. <span class="tr" lang="tr">Bu kod yok. Ekrana tekrar bak.</span>'
+            : x.kod === 'BITTI' ? 'Deze wedstrijd is al klaar. <span class="tr" lang="tr">Bu yarış bitti.</span>'
             : baglantiHatasi(x));
-          govde.querySelector('#pin').value = pin;
+          govde.querySelector('#pin').value = pin; govde.querySelector('#ad').value = ad;
         });
       });
     }
-    function oyunda() {
-      var n = yeni(), anahtar = '', cevaplar = {}, aralik = CANLI.okuma;
-      govde.innerHTML = '<div class="canli oyuncu-ekran"><div class="oyuncu-ust"><b>' + esc(ogr.ad) + '</b><span class="oyuncu-puan"></span></div>' +
+    function oyunda(benimSatir) {
+      var n = yeni(), anahtar = '', cevaplar = {}, aralik = CANLI.okuma, tur = 0;
+      if (benimSatir && benimSatir.cevapNo >= 0) cevaplar[benimSatir.cevapNo] = benimSatir.secim;      // yenilemeden önce verilen cevap
+      govde.innerHTML = '<div class="canli oyuncu-ekran"><div class="oyuncu-ust"><b>' + esc(ben.ad) + '</b><span class="oyuncu-puan"></span></div>' +
         '<div class="oyuncu-ic" aria-live="polite"></div>' + CANLI_AG + '</div>';
       var ic = govde.querySelector('.oyuncu-ic');
       dongu(n, function () { return aralik; }, function () {
-        return C.oyun().then(function (o) {
+        return C.oyun(ben.pin).then(function (o) {
           if (!suAn(n)) return;
-          aralik = o && o.durum === 'bitti' ? 5000 : CANLI.okuma;      // yarış bitince daha seyrek bak
-          if (!o || o.pin !== pinim) { pinEkrani(o ? undefined : 'De wedstrijd is gestopt. <span class="tr" lang="tr">Yarış kapandı.</span>'); return; }
-          var a = o.durum + ':' + o.no;
-          if (a === anahtar) return;
-          anahtar = a; goster(o);
+          if (!o) { katilEkrani('De wedstrijd is gestopt. Is er een nieuwe? Typ de nieuwe code. <span class="tr" lang="tr">Yarış kapandı. Yeni yarış varsa yeni kodu yaz.</span>'); return; }
+          aralik = o.durum === 'bitti' ? 5000 : CANLI.okuma;      // yarış bitince daha seyrek bak
+          // Beklerken ara ara: hoca adımı çıkardı mı?
+          if (o.durum === 'bekle' && ++tur % 3 === 0) {
+            return C.benim(ben.pin, ben.id).then(function (b) {
+              if (!suAn(n)) return;
+              if (!b) { katilEkrani('Je naam is weggehaald. Typ een goede naam en doe opnieuw mee. <span class="tr" lang="tr">Adın çıkarıldı. Düzgün bir ad yazıp tekrar katıl.</span>'); return; }
+              degisti(o);
+            });
+          }
+          degisti(o);
         });
       });
+      function degisti(o) {
+        var a = o.durum + ':' + o.no;
+        if (a === anahtar) return;
+        anahtar = a; goster(o);
+      }
       function goster(o) {
         clearInterval(sayac);
-        var ben = (o.oyuncular || {})[ogr.uid];
-        govde.querySelector('.oyuncu-puan').innerHTML = ben ? ben.puan + ' <small>punten · puan</small>' : '';
+        var b = (o.oyuncular || {})[ben.id];
+        govde.querySelector('.oyuncu-puan').innerHTML = b ? b.puan + ' <small>punten · puan</small>' : '';
         if (o.durum === 'bekle') ic.innerHTML = '<div class="oyuncu-bekle"><p class="ob-baslik">Je doet mee!<span class="tr" lang="tr">Katıldın!</span></p>' +
           '<p>Kijk naar het grote scherm. De wedstrijd begint zo. <span class="tr" lang="tr">Büyük ekrana bak. Yarış birazdan başlıyor.</span></p><span class="nokta-nokta" aria-hidden="true"><i></i><i></i><i></i></span></div>';
         else if (o.durum === 'soru') soruGoster(o);
-        else if (o.durum === 'cevap') sonucGoster(o, ben);
-        else bittiGoster(o, ben);
+        else if (o.durum === 'cevap') sonucGoster(o, b);
+        else bittiGoster(o, b);
       }
       function soruGoster(o) {
         var no = o.no, gorulme = Date.now(), sure = o.sure * 1000 - 300;
@@ -1625,7 +1658,7 @@ window.DERS = {
             ic.querySelectorAll('.cd').forEach(function (x) { x.disabled = true; x.classList.toggle('secildi', x === d); });
             clearInterval(sayac);
             cevaplar[no] = i;
-            C.cevapla(ogr.uid, no, i).then(function () { if (suAn(n) && anahtar === 'soru:' + no) gonderildi(i); }, function (e) {
+            C.cevapla(ben.pin, ben.id, no, i).then(function () { if (suAn(n) && anahtar === 'soru:' + no) gonderildi(i); }, function (e) {
               if (!suAn(n) || anahtar !== 'soru:' + no) return;
               if (e && e.durum === 403) { ic.innerHTML = '<div class="oyuncu-bekle"><p class="ob-baslik">Te laat!<span class="tr" lang="tr">Geç kaldın!</span></p><p>Kijk naar het grote scherm. <span class="tr" lang="tr">Büyük ekrana bak.</span></p></div>'; return; }
               delete cevaplar[no];
@@ -1639,28 +1672,31 @@ window.DERS = {
         ic.innerHTML = '<div class="gonderildi cs' + i + '">' + sekil(i) + '<p class="ob-baslik">Antwoord verstuurd!<span class="tr" lang="tr">Cevabın gitti!</span></p>' +
           '<p>Kijk naar het grote scherm. <span class="tr" lang="tr">Büyük ekrana bak.</span></p></div>';
       }
-      function yerYazi(o) {
+      function yerBul(o) {
         var l = canliSiralama(o.oyuncular), yer = 0;
-        l.forEach(function (x, i) { if (x.uid === ogr.uid) yer = i + 1; });
+        l.forEach(function (x, i) { if (x.uid === ben.id) yer = i + 1; });
         return { yer: yer, kac: l.length, l: l };
       }
-      function sonucGoster(o, ben) {
-        var y = yerYazi(o), verdi = cevaplar[o.no] != null;
-        var iyi = ben && ben.dogru, cevapli = ben && ben.secim >= 0;
-        var b = iyi ? ['Goed!', 'Doğru!'] : cevapli ? ['Helaas, fout', 'Olmadı'] : verdi ? ['Je antwoord was te laat', 'Cevabın geç kaldı'] : ['Geen antwoord', 'Cevap vermedin'];
-        ic.innerHTML = '<div class="oyuncu-sonuc ' + (iyi ? 'dogru' : 'yanlis') + '"><p class="ob-baslik">' + b[0] + (iyi ? ' +' + ben.son : '') + '<span class="tr" lang="tr">' + b[1] + '</span></p>' +
+      function sonucGoster(o, b) {
+        var y = yerBul(o), verdi = cevaplar[o.no] != null;
+        var iyi = b && b.dogru, cevapli = b && b.secim >= 0;
+        var m = iyi ? ['Goed!', 'Doğru!'] : cevapli ? ['Helaas, fout', 'Olmadı'] : verdi ? ['Je antwoord was te laat', 'Cevabın geç kaldı'] : ['Geen antwoord', 'Cevap vermedin'];
+        ic.innerHTML = '<div class="oyuncu-sonuc ' + (iyi ? 'dogru' : 'yanlis') + '"><p class="ob-baslik">' + m[0] + (iyi ? ' +' + b.son : '') + '<span class="tr" lang="tr">' + m[1] + '</span></p>' +
           (y.yer ? '<p class="os-yer">Je staat <b>' + y.yer + 'e</b> van ' + y.kac + '<span class="tr" lang="tr">' + y.kac + ' kişiden <b>' + y.yer + '.</b> sıradasın</span></p>' : '') + '</div>';
         if (window.SES) SES.cal(iyi ? 'dogru' : 'yanlis');
       }
-      function bittiGoster(o, ben) {
-        var y = yerYazi(o);
+      function bittiGoster(o, b) {
+        var y = yerBul(o);
         ic.innerHTML = '<div class="oyuncu-sonuc bitti"><p class="ob-baslik">De wedstrijd is klaar!<span class="tr" lang="tr">Yarış bitti!</span></p>' +
-          (y.yer ? '<p class="os-buyuk">' + y.yer + '<small>e</small></p><p class="os-yer">Je bent <b>' + y.yer + 'e</b> geworden met ' + (ben ? ben.puan : 0) + ' punten.<span class="tr" lang="tr">' + y.yer + '. oldun, ' + (ben ? ben.puan : 0) + ' puan.</span></p>' : '') +
-          '<ol class="sira-liste">' + y.l.slice(0, 3).map(function (x, i) { return '<li class="s' + (i + 1) + (x.uid === ogr.uid ? ' ben' : '') + '"><span class="sira-no">' + (i + 1) + '</span><span class="sira-ad">' + esc(x.ad) + '</span><b>' + x.puan + '</b></li>'; }).join('') + '</ol></div>';
+          (y.yer ? '<p class="os-buyuk">' + y.yer + '<small>e</small></p><p class="os-yer">Je bent <b>' + y.yer + 'e</b> geworden met ' + (b ? b.puan : 0) + ' punten.<span class="tr" lang="tr">' + y.yer + '. oldun, ' + (b ? b.puan : 0) + ' puan.</span></p>' : '') +
+          '<ol class="sira-liste">' + y.l.slice(0, 3).map(function (x, i) { return '<li class="s' + (i + 1) + (x.uid === ben.id ? ' ben' : '') + '"><span class="sira-no">' + (i + 1) + '</span><span class="sira-ad">' + esc(x.ad) + '</span><b>' + x.puan + '</b></li>'; }).join('') + '</ol></div>';
         if (window.SES) SES.cal(y.yer && y.yer <= 3 ? 'rekor' : 'bitis');
-        document.dispatchEvent(new CustomEvent('canli-bitti', { detail: { yer: y.yer, kac: y.kac, puan: ben ? ben.puan : 0 } }));
+        document.dispatchEvent(new CustomEvent('canli-bitti', { detail: { yer: y.yer, kac: y.kac, puan: b ? b.puan : 0 } }));
       }
     }
+
+    // Başlangıç (en sonda: yukarıdaki değişkenler hazır olsun)
+    if (hocaMi()) hocaBasla(); else ogrenciBasla();
   }
 
   // =========================================================
