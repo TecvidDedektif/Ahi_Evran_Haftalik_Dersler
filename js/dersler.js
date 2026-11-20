@@ -1239,7 +1239,14 @@ window.DERS = {
     var nesil = 0, sayac = null, durdu = false;
     document.title = 'Live wedstrijd · Ahi Evran Camii';
     ustGeri('#/', 'Alle weken', 'Tüm haftalar', 'Live wedstrijd', 'Canlı yarış');
-    temizlik.push(function () { durdu = true; nesil++; clearInterval(sayac); document.body.classList.remove('genis'); });
+    temizlik.push(function () { durdu = true; nesil++; clearInterval(sayac); document.body.classList.remove('genis'); muzik(null); });
+    // Müzik sadece hocanın büyük ekranında (js/ses.js)
+    function muzik(ad) { if (window.SES && SES.muzik) SES.muzik(ad); }
+    function muzikDugmesi(goster) {
+      var kap = ust.querySelector('.kap'), d = kap && kap.querySelector('.muzik-d');
+      if (goster && !d && kap && window.SES && SES.muzikDugme) kap.insertBefore(SES.muzikDugme(), kap.querySelector('.ses-d'));
+      if (!goster && d) d.remove();
+    }
     if (!C) { govde.innerHTML = '<p class="giris">De live wedstrijd is nu niet beschikbaar. <span class="tr" lang="tr">Canlı yarış şu an açılmıyor.</span></p>'; return; }
 
     // Her ekran değişince nesil artar; eski sayaçlar ve okumalar kendiliğinden durur.
@@ -1284,6 +1291,7 @@ window.DERS = {
 
     function hocaBasla() {
       document.body.classList.add('genis');
+      setTimeout(function () { if (!durdu) muzikDugmesi(true); }, 0);     // üst şerit (hoparlör) hazır olunca
       var n = yeni(), p = canliPlanOku();
       yukleniyor();
       (p && p.pin && p.oyun ? C.oyun(p.pin) : Promise.resolve(null)).then(function (o) {
@@ -1299,6 +1307,7 @@ window.DERS = {
     }
     function kurulum(yarim) {
       var n = yeni();
+      muzik(null);
       var secim = { hafta: varsayilanHafta(), zor: false, adet: 10, sure: 20 };
       function dugmeler(ad, l) {
         return '<div class="kies" role="group">' + l.map(function (x) {
@@ -1366,6 +1375,7 @@ window.DERS = {
 
     function lobi() {
       var n = yeni(), katilan = [];
+      muzik('lobi');
       var adres = location.host + location.pathname.replace(/index\.html$/, '');
       govde.innerHTML = '<div class="canli hoca-ekran lobi">' +
         '<div class="pin-kutu"><p>Code<span class="tr" lang="tr"> · Kod</span></p><b class="pin" aria-label="Code ' + esc(oyun.pin) + '">' + esc(oyun.pin) + '</b>' +
@@ -1436,6 +1446,7 @@ window.DERS = {
     function soruEkrani() {
       var n = yeni(), s = plan.sorular[oyun.no], bitis = Date.now() + oyun.sure * 1000, bitti = false;
       var kac = Object.keys(oyun.oyuncular).length;
+      muzik('soru');
       govde.innerHTML = '<div class="canli hoca-ekran soru-ekran renk-' + esc(s.konu.renk) + '">' + canliUst(s) + canliSure(oyun.sure) + canliSoruMetni(s, false) +
         canliSecenekler(s.secenekler, -1) +
         '<div class="canli-alt"><span class="cevap-sayi"><b>0</b> / ' + kac + ' antwoorden<span class="tr" lang="tr"> · cevap</span></span>' +
@@ -1448,6 +1459,7 @@ window.DERS = {
         sn.textContent = Math.ceil(k);
         sureKutu.classList.toggle('az', k <= 5);
         tiktak(k);
+        if (window.SES && SES.muzikHiz) SES.muzikHiz(k <= 5 ? 1.25 : 1);     // son saniyelerde müzik hızlanır
         if (k <= 0) sureBitti(true);
       }, 100);
       dongu(n, CANLI.okuma, function () {
@@ -1462,6 +1474,7 @@ window.DERS = {
       function sureBitti(bekle) {
         if (bitti) return;
         bitti = true; clearInterval(sayac);
+        muzik(null);
         if (window.SES) SES.cal('sure');
         govde.querySelector('.canli-alt').innerHTML = '<span class="cevap-sayi">Tijd is om! Antwoorden tellen…<span class="tr" lang="tr"> · Süre doldu! Cevaplar sayılıyor…</span></span>';
         sn.textContent = '0'; cubuk.style.transform = 'scaleX(0)';
@@ -1490,6 +1503,7 @@ window.DERS = {
     }
     function sonucEkrani() {
       var n = yeni(), s = plan.sorular[oyun.no], son = oyun.no + 1 >= oyun.toplam;
+      muzik(null);
       var l = canliSiralama(oyun.oyuncular), dogruSay = l.filter(function (x) { return x.dogru; }).length;
       govde.innerHTML = '<div class="canli hoca-ekran sonuc-ekran renk-' + esc(s.konu.renk) + '">' + canliUst(s) + canliSoruMetni(s, true) +
         canliSecenekler(s.secenekler, s.dogru, oyun.dagilim) +
@@ -1525,7 +1539,8 @@ window.DERS = {
         }).join('') + '</ol>' : '') +
         '<div class="canli-dugmeler"><button type="button" class="dugme ana buyuk yeni">Nieuwe wedstrijd<small>Yeni yarış</small></button></div></div>';
       govde.querySelector('.yeni').addEventListener('click', function () { kurulum(null); });
-      if (window.SES && l.length) SES.cal('rekor');
+      muzik(null);
+      if (window.SES && l.length) SES.cal('kutlama');
     }
 
     // =====================================================
@@ -1542,6 +1557,7 @@ window.DERS = {
 
     function ogrenciBasla() {
       document.body.classList.remove('genis');
+      muzik(null); muzikDugmesi(false);
       var n = yeni();
       if (!ben.pin || !ben.id) { katilEkrani(); return; }
       yukleniyor();
