@@ -430,7 +430,7 @@ window.DERS = {
           ic.querySelectorAll('.secenek').forEach(function (x) { x.disabled = true; if (x.dataset.t === k.tur) x.classList.add('dogru'); else if (x === d) x.classList.add('yanlis'); });
           ic.querySelector('.kelime-yer').innerHTML = kelimeCiz(k.yazi, true, MEDD[k.tur].kopru);
           ic.querySelector('.sonuc').innerHTML = '<div class="geri-bildirim ' + (iyi ? 'dogru' : 'yanlis') + '"><b>' + (iyi ? 'Goed! · Doğru!' : 'Bijna! · Neredeyse!') + '</b>' +
-            meddAciklama(k) + '</div>' +
+            meddAciklama(k) + dinleDugmesi(k.yazi) + '</div>' +
             '<button type="button" class="dugme ana sonraki">' + (sira + 1 < liste.length ? 'Volgende<small>Sonraki</small>' : 'Uitslag<small>Sonuç</small>') + '</button>';
           var sn = ic.querySelector('.sonraki');
           sn.addEventListener('click', function () { sira++; if (sira < liste.length) soru(); else bitis(); });
@@ -457,6 +457,35 @@ window.DERS = {
       '<a class="dugme ana" href="' + esc(b.adres) + '"' + (ic ? '' : ' target="_blank" rel="noopener"') + '>' + ikiSatir(b.dugme) + '</a></section>';
   };
 
+  // ---------- Kelimelerin sesi: Hüsarî, muallim (tecvid/sesler.js) ----------
+  var DINLE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path class="dalga1" d="M15.5 9a4 4 0 0 1 0 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="dalga2" d="M18 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+  var kelimeSesi = null, kelimeDugmesi = null;
+  function sesAdi(yazi) { return window.KELIME_SES && window.KELIME_SES[yazi]; }
+  function dinleDugmesi(yazi, sinif) {
+    var a = sesAdi(yazi);
+    return a ? '<button type="button" class="dinle' + (sinif ? ' ' + sinif : '') + '" data-ses="' + esc(a) + '" aria-label="Luister · Dinle">' + DINLE_SVG + '<span>Luister<small>Dinle</small></span></button>' : '';
+  }
+  function kelimeSusur() {
+    if (kelimeSesi) { try { kelimeSesi.pause(); } catch (e) {} kelimeSesi = null; }
+    if (kelimeDugmesi) { kelimeDugmesi.classList.remove('caliyor'); kelimeDugmesi = null; }
+  }
+  function kelimeCal(ad, dugme) {
+    var ayni = kelimeDugmesi === dugme && kelimeSesi && !kelimeSesi.paused;
+    kelimeSusur();
+    if (ayni) return;                                  // çalarken bir daha dokunmak durdurur
+    try {
+      var a = new Audio('ses/kelime/' + ad + '.mp3');
+      kelimeSesi = a; kelimeDugmesi = dugme || null;
+      if (dugme) dugme.classList.add('caliyor');
+      a.addEventListener('ended', function () { if (kelimeSesi === a) kelimeSusur(); });
+      var p = a.play(); if (p && p.catch) p.catch(function () { if (kelimeSesi === a) kelimeSusur(); });
+    } catch (e) { kelimeSusur(); }
+  }
+  document.addEventListener('click', function (e) {
+    var d = e.target.closest && e.target.closest('.dinle');
+    if (d && d.dataset.ses) { e.preventDefault(); kelimeCal(d.dataset.ses, d); }
+  });
+
   // Renkli işaretli örnek kelimeler (tecvid kuralları için)
   BLOK.ornekler = function (b) {
     return '<section class="blok ornekler"><h3>' + ikiSatir(b.baslik || { nl: 'Voorbeelden', tr: 'Örnekler' }) + '</h3>' +
@@ -465,7 +494,7 @@ window.DERS = {
       '<div class="ornek-liste">' + b.kelimeler.map(function (k) {
         return '<div class="ornek">' + kelimeCiz(k.yazi, true, MEDD[k.tur] && MEDD[k.tur].kopru) +
           '<p class="okunus"><b>' + esc(k.okunus) + '</b></p><p>' + esc(k.nl) + '<small class="tr" lang="tr">' + esc(k.tr) + '</small></p>' +
-          '<p class="kaynak">' + esc(k.kaynak) + '</p></div>';
+          '<p class="kaynak">' + esc(k.kaynak) + '</p>' + dinleDugmesi(k.yazi) + '</div>';
       }).join('') + '</div></section>';
   };
 
@@ -1507,13 +1536,14 @@ window.DERS = {
       var l = canliSiralama(oyun.oyuncular), dogruSay = l.filter(function (x) { return x.dogru; }).length;
       govde.innerHTML = '<div class="canli hoca-ekran sonuc-ekran renk-' + esc(s.konu.renk) + '">' + canliUst(s) + canliSoruMetni(s, true) +
         canliSecenekler(s.secenekler, s.dogru, oyun.dagilim) +
-        (s.aciklama ? '<div class="geri-bildirim dogru canli-aciklama"><p>' + esc(s.aciklama.nl) + '</p>' + (s.aciklama.tr ? '<p class="tr" lang="tr">' + esc(s.aciklama.tr) + '</p>' : '') + '</div>' : '') +
+        (s.aciklama ? '<div class="geri-bildirim dogru canli-aciklama"><p>' + esc(s.aciklama.nl) + '</p>' + (s.aciklama.tr ? '<p class="tr" lang="tr">' + esc(s.aciklama.tr) + '</p>' : '') + (s.ar ? dinleDugmesi(s.ar) : '') + '</div>' : '') +
         '<section class="blok ara-sira"><h3>Tussenstand<small class="tr" lang="tr">Ara sıralama · ' + dogruSay + ' / ' + l.length + ' doğru</small></h3>' +
         '<ol class="sira-liste buyuk">' + l.slice(0, 5).map(function (x, i) {
           return '<li class="s' + (i + 1) + '"><span class="sira-no">' + (i + 1) + '</span><span class="sira-ad">' + esc(x.ad) + (x.son ? '<small>+' + x.son + '</small>' : '') + '</span><b>' + x.puan + '</b></li>';
         }).join('') + '</ol></section>' +
         '<div class="canli-dugmeler"><button type="button" class="dugme ana buyuk sonraki">' + (son ? 'Uitslag<small>Sonuç</small>' : 'Volgende vraag<small>Sonraki soru</small>') + '</button></div></div>';
-      var d = govde.querySelector('.sonraki');
+      var d = govde.querySelector('.sonraki'), dn = govde.querySelector('.canli-aciklama .dinle');
+      if (dn && window.SES && SES.acikMi()) setTimeout(function () { if (suAn(n)) kelimeCal(dn.dataset.ses, dn); }, 900);   // med sorusu: Hüsarî'den bir kez dinlet
       d.addEventListener('click', function () {
         if (!suAn(n)) return;
         d.disabled = true;
@@ -2063,6 +2093,7 @@ window.DERS = {
     temizlik.forEach(function (f) { f(); });
     temizlik = [];
     kilitGorundu = false;
+    kelimeSusur();
     var p = location.hash.split('/');
     var h = D.haftalar[p[1]];
     if (p[1] === 'tecvid' && D.tecvid) {
