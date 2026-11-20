@@ -11,6 +11,7 @@
      #/hafta-10/yaris      yarış sayfası: ortak puan tablosu + sınıf yarışı
      #/hafta-10/zor        zor yarış: tek kişilik, 20 soru, puan tabloya gönderilebilir
      #/canli               canlı yarış: hoca büyük ekranda açar, çocuklar telefondan katılır
+     #/rozetler            kazanılan ve kazanılacak rozetler
      #/tecvid              tecvid bölümü: bütün kurallar
      #/tecvid/ariz         bir kural
      #/tecvid/karisik      bütün kurallardan karışık tekrar oyunu
@@ -40,6 +41,7 @@
      dersler-hesap    Zor yarış oturumu (çıkış yapınca silinir)
      dersler-hoca     hoca modu (sadece bu sekmede; tarayıcı kapanınca silinir)
      dersler-canli    hocanın ekranında yarım kalan canlı yarış (sorular ve sıra)
+     dersler-rozet    rozetler ve onlar için sayılanlar (okunan hikâyeler, yarışlar, haftalar)
    ============================================================ */
 
 window.DERS = {
@@ -100,9 +102,8 @@ window.DERS = {
   var yildizlar = oku('dersler-yildiz', {});
   function yildizVer(hafta, anahtar, adet) {
     var k = hafta + ':' + anahtar;
-    if ((yildizlar[k] || 0) >= adet) return;
-    yildizlar[k] = adet;
-    yaz('dersler-yildiz', yildizlar);
+    if ((yildizlar[k] || 0) < adet) { yildizlar[k] = adet; yaz('dersler-yildiz', yildizlar); }
+    rozetOlay('yildiz');            // oyun bitti: rozetlere bak
   }
   function haftaYildizi(h) {
     var kazanilan = 0, toplam = 0;
@@ -200,7 +201,7 @@ window.DERS = {
     return '<section class="blok sohbet" data-sohbet="' + yer.bi + '"><h3><span class="simge" aria-hidden="true">' + esc(b.simge || '💬') + '</span><span>' + ikiSatir(b.baslik) + '</span></h3>' +
       '<div class="balonlar" aria-live="polite"></div><div class="sohbet-alt"></div></section>';
   };
-  function sohbetKur(kok, b) {
+  function sohbetKur(kok, b, yer) {
     var balonlar = kok.querySelector('.balonlar'), alt = kok.querySelector('.sohbet-alt'), i = 0;
     function ekle(html, sinif) {
       var d = document.createElement('div');
@@ -230,6 +231,7 @@ window.DERS = {
     function devam() {
       if (i >= b.adimlar.length) {
         alt.innerHTML = (b.anlam ? anlamKutu(b.anlam) : '') + '<button type="button" class="dugme bastan">Opnieuw lezen<small>Baştan oku</small></button>';
+        if (yer) rozetOlay('sohbet', yer.hafta + ':' + yer.konu + ':' + yer.bi);
         alt.querySelector('.bastan').addEventListener('click', function () { basla(); kok.scrollIntoView({ block: 'start', behavior: azHareket ? 'auto' : 'smooth' }); odak(); });
         return;
       }
@@ -502,6 +504,7 @@ window.DERS = {
     if (d) s[el.dataset.ik] = d; else delete s[el.dataset.ik];
     if (!Object.keys(s).length) delete isaretler[a];
     yaz('dersler-isaret', isaretler);
+    rozetKontrol();
     // Aynı cümle sayfada iki kez varsa (baştan okunan sohbet gibi) ikisi de aynı görünsün
     govde.querySelectorAll('.ik[data-ik="' + el.dataset.ik + '"]').forEach(function (es) {
       if (es === el) return;
@@ -1037,6 +1040,7 @@ window.DERS = {
       });
     }
     function sonuc(r) {
+      rozetOlay('zor', { dogru: dogru });
       if (window.SES) SES.cal(r && r.rekor ? 'rekor' : 'bitis');
       var mesaj = !r
         ? '<div class="geri-bildirim yanlis"><b>Niet opgeslagen · Kaydedilemedi</b><p>Deze ronde duurde te lang of was al afgesloten.</p><p class="tr" lang="tr">Bu tur çok uzun sürdü ya da zaten kapanmıştı.</p></div>'
@@ -1660,6 +1664,193 @@ window.DERS = {
   }
 
   // =========================================================
+  // Rozetler: haftalar boyunca oyunlardan, hikâyelerden ve yarışlardan kazanılır.
+  // Sadece bu cihazda saklanır (dersler-rozet); hiçbir yere gönderilmez.
+  //   k        kazanılan rozetler: { id: zaman }
+  //   sohbet   sonuna kadar okunan hikâyeler: { "hafta:konu:blok": 1 }
+  //   zor      zor yarış: { oyun, enIyi (doğru sayısı) }
+  //   canli    canlı yarış: { oyun, enIyiYer }
+  //   haftalar oyun oynanan takvim haftaları: { "2026-47": 1 }
+  // =========================================================
+  var rozet = oku('dersler-rozet', {});
+  ['k', 'sohbet', 'zor', 'canli', 'haftalar'].forEach(function (a) { if (!rozet[a] || typeof rozet[a] !== 'object') rozet[a] = {}; });
+  var ROZET_RENK = { ogrenme: 'var(--ibadet)', tecvid: 'var(--kuran)', yaris: 'var(--siyer)', devam: 'var(--ezber)', bronz: '#b9733a', gumus: '#8b98aa', altin: '#e2a500' };
+  var ROZET_GRUP = [
+    { id: 'ogrenme', nl: 'Leren', tr: 'Öğrenme' },
+    { id: 'tecvid', nl: 'Tecvid', tr: 'Tecvid' },
+    { id: 'yaris', nl: 'Wedstrijden', tr: 'Yarışlar' },
+    { id: 'devam', nl: 'Volhouden', tr: 'Devamlılık' },
+  ];
+  // Simgeler 24x24, çizgi olarak çizilir
+  var ROZET_SIMGE = {
+    filiz: '<path d="M12 21v-9M12 12c0-4-3-6.5-7-6.5 0 4 3 6.5 7 6.5zM12 12c0-4.2 3-7 7-7 0 4.2-3 7-7 7z"/>',
+    yildiz: '<path d="M12 3.5l2.5 5.3 5.8.7-4.3 4 1.1 5.7L12 16.4l-5.1 2.8 1.1-5.7-4.3-4 5.8-.7z"/>',
+    takvimYildiz: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9.5h16M8.5 3v4M15.5 3v4M12 11.8l1.1 2.2 2.4.3-1.8 1.7.4 2.4-2.1-1.2-2.1 1.2.4-2.4-1.8-1.7 2.4-.3z"/>',
+    ucYildiz: '<path d="M12 3l1.6 3.3 3.6.5-2.6 2.5.6 3.6L12 11.2l-3.2 1.7.6-3.6-2.6-2.5 3.6-.5zM6 13.5l1 2 2.2.3-1.6 1.6.4 2.2-2-1-2 1 .4-2.2-1.6-1.6 2.2-.3zM18 13.5l1 2 2.2.3-1.6 1.6.4 2.2-2-1-2 1 .4-2.2-1.6-1.6 2.2-.3z"/>',
+    kitap: '<path d="M3 5.5c3-1 6-1 9 1 3-2 6-2 9-1V19c-3-1-6-1-9 1-3-2-6-2-9-1zM12 6.5V20"/>',
+    merdiven: '<path d="M3.5 20h4.5v-4.5h4.5V11h4.5V6.5h3.5"/><path d="M3.5 20h17"/>',
+    kalp: '<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 7.5 2.5C19.5 15.4 12 20 12 20z"/>',
+    kalem: '<path d="M14.5 4.5l5 5L9 20H4v-5zM12.5 6.5l5 5"/>',
+    buyutec: '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/>',
+    pusula: '<circle cx="12" cy="12" r="8.5"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
+    tac: '<path d="M4 19h16M5 15.5L4 7l5 4 3-6 3 6 5-4-1 8.5z"/>',
+    karisik: '<path d="M3 7h4l10 10h4M3 17h4l3-3M14 10l3-3h4M18 4l3 3-3 3M18 14l3 3-3 3"/>',
+    kronometre: '<circle cx="12" cy="13.5" r="7"/><path d="M12 13.5V10M10 3h4M18.2 7.3l1.5-1.5"/>',
+    zirve: '<path d="M2.5 20l6.5-10.5 4 6 3-4 5.5 8.5zM9 9.5V3.5l4.5 1.6L9 6.7"/>',
+    sinif: '<circle cx="8" cy="9" r="3"/><circle cx="16.5" cy="9.5" r="2.5"/><path d="M3 19.5c0-3 2.2-5.2 5-5.2s5 2.2 5 5.2M13.6 15.3c.9-.8 1.9-1.2 3-1.2 2.5 0 4.4 1.9 4.4 4.7"/>',
+    podyum: '<path d="M3 20v-6h6v6M9 20V9h6v11M15 20v-8h6v8M2.5 20h19"/>',
+    kupa: '<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5c0 3 1.5 4.5 3.5 4.5M16 6h3c0 3-1.5 4.5-3.5 4.5M12 13v4M8.5 20h7M10 17h4v3h-4z"/>',
+    takvimTik: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9.5h16M8.5 3v4M15.5 3v4M8.5 14.5l2.2 2.2 4.8-4.8"/>',
+  };
+  function bloklarHepsi() {             // açık haftaların ve kuralların oyun blokları
+    var l = [];
+    D.sira.forEach(function (id) {
+      var h = D.haftalar[id];
+      if (!h || kilitli(h)) return;
+      h.konular.forEach(function (k) { k.bloklar.forEach(function (b, bi) { l.push({ a: h.id + ':' + k.id + ':' + bi, tur: b.tur }); }); });
+    });
+    if (D.tecvid) D.tecvid.kurallar.forEach(function (k) {
+      if (kuralKilitli(k)) return;
+      k.bloklar.forEach(function (b, bi) { l.push({ a: 'tecvid:' + k.id + ':' + bi, tur: b.tur }); });
+    });
+    return l;
+  }
+  function tamYildizVar(tur) { return bloklarHepsi().some(function (x) { return x.tur === tur && (yildizlar[x.a] || 0) >= 3; }); }
+  function toplamYildiz() { return Object.keys(yildizlar).reduce(function (t, k) { return t + (Number(yildizlar[k]) || 0); }, 0); }
+  function tamHafta() {
+    return D.sira.some(function (id) { var h = D.haftalar[id]; if (!h || kilitli(h)) return false; var y = haftaYildizi(h); return y.toplam > 0 && y.kazanilan >= y.toplam; });
+  }
+  function tecvidTam() {                // { tam: tamamlanan kural sayısı, hepsi: yıldızlı açık kural sayısı }
+    var tam = 0, hepsi = 0;
+    if (D.tecvid) D.tecvid.kurallar.forEach(function (k) {
+      if (kuralKilitli(k)) return;
+      var y = haftaYildizi({ id: 'tecvid', konular: [k] });
+      if (!y.toplam) return;
+      hepsi++; if (y.kazanilan >= y.toplam) tam++;
+    });
+    return { tam: tam, hepsi: hepsi };
+  }
+  function isaretliKelime() {
+    var n = 0;
+    Object.keys(isaretler).forEach(function (a) { Object.keys(isaretler[a]).forEach(function (c) { n += String(isaretler[a][c]).replace(/0/g, '').length; }); });
+    return n;
+  }
+  function say(o) { return Object.keys(o || {}).length; }
+  // ilerleme: [şimdiki, hedef]
+  var ROZETLER = [
+    { id: 'ilk-adim', grup: 'ogrenme', simge: 'filiz', nl: 'Eerste stap', tr: 'İlk adım', nasilNl: 'Verdien je eerste ster in een spel.', nasilTr: 'Bir oyunda ilk yıldızını kazan.', kosul: function () { return toplamYildiz() > 0; } },
+    { id: 'tam-puan', grup: 'ogrenme', simge: 'yildiz', nl: 'Foutloos', tr: 'Tam puan', nasilNl: 'Haal 3 sterren in een spel.', nasilTr: 'Bir oyunda 3 yıldız al.', kosul: function () { return Object.keys(yildizlar).some(function (k) { return yildizlar[k] >= 3; }); } },
+    { id: 'hikaye', grup: 'ogrenme', simge: 'kitap', nl: 'Verhalenlezer', tr: 'Hikâye okuru', nasilNl: 'Lees 5 verhalen helemaal uit.', nasilTr: '5 hikâyeyi sonuna kadar oku.', ilerleme: function () { return [say(rozet.sohbet), 5]; } },
+    { id: 'sira', grup: 'ogrenme', simge: 'merdiven', nl: 'Stap voor stap', tr: 'Adım adım', nasilNl: 'Zet de stappen in de goede volgorde, zonder fout (3 sterren).', nasilTr: 'Adımları hatasız sırala (3 yıldız).', kosul: function () { return tamYildizVar('sirala'); } },
+    { id: 'ezber', grup: 'ogrenme', simge: 'kalp', nl: 'Uit het hoofd', tr: 'Ezberci', nasilNl: 'Zet de âyets van een sure in de goede volgorde (3 sterren).', nasilTr: 'Bir sûrenin âyetlerini doğru sırala (3 yıldız).', kosul: function () { return tamYildizVar('ezber'); } },
+    { id: 'isaret', grup: 'ogrenme', simge: 'kalem', nl: 'Markeerder', tr: 'İşaretçi', nasilNl: 'Markeer 20 woorden met de stift.', nasilTr: 'Kalemle 20 kelime işaretle.', ilerleme: function () { return [isaretliKelime(), 20]; } },
+    { id: 'hafta', grup: 'ogrenme', simge: 'takvimYildiz', nl: 'Ster van de week', tr: 'Haftanın yıldızı', nasilNl: 'Haal alle sterren van één week.', nasilTr: 'Bir haftanın bütün yıldızlarını topla.', kosul: tamHafta },
+    { id: 'yildiz-25', grup: 'bronz', simge: 'ucYildiz', nl: 'Sterrenjager', tr: 'Yıldız avcısı', alt: { nl: 'brons', tr: 'bronz' }, nasilNl: 'Verzamel 25 sterren.', nasilTr: '25 yıldız topla.', ilerleme: function () { return [toplamYildiz(), 25]; } },
+    { id: 'yildiz-50', grup: 'gumus', simge: 'ucYildiz', nl: 'Sterrenjager', tr: 'Yıldız avcısı', alt: { nl: 'zilver', tr: 'gümüş' }, nasilNl: 'Verzamel 50 sterren.', nasilTr: '50 yıldız topla.', ilerleme: function () { return [toplamYildiz(), 50]; } },
+    { id: 'yildiz-100', grup: 'altin', simge: 'ucYildiz', nl: 'Sterrenjager', tr: 'Yıldız avcısı', alt: { nl: 'goud', tr: 'altın' }, nasilNl: 'Verzamel 100 sterren.', nasilTr: '100 yıldız topla.', ilerleme: function () { return [toplamYildiz(), 100]; } },
+    { id: 'med', grup: 'tecvid', simge: 'buyutec', nl: 'Medd-detective', tr: 'Med dedektifi', nasilNl: 'Haal 3 sterren in een “Welke medd?”-spel.', nasilTr: 'Bir “Hangi med?” oyununda 3 yıldız al.', kosul: function () { return tamYildizVar('medd'); } },
+    { id: 'tecvid-3', grup: 'tecvid', simge: 'pusula', nl: 'Tecvid-reiziger', tr: 'Tecvid yolcusu', nasilNl: 'Haal alle sterren bij 3 tecvidregels.', nasilTr: '3 tecvid kuralının bütün yıldızlarını al.', ilerleme: function () { return [tecvidTam().tam, 3]; } },
+    { id: 'tecvid-hepsi', grup: 'tecvid', simge: 'tac', nl: 'Tecvid-meester', tr: 'Tecvid ustası', nasilNl: 'Haal alle sterren bij alle tecvidregels.', nasilTr: 'Bütün tecvid kurallarının bütün yıldızlarını al.', ilerleme: function () { var t = tecvidTam(); return [t.tam, Math.max(1, t.hepsi)]; } },
+    { id: 'karisik', grup: 'tecvid', simge: 'karisik', nl: 'Alles door elkaar', tr: 'Karışık şampiyonu', nasilNl: 'Haal 3 sterren in de gemengde herhaling.', nasilTr: 'Karışık tekrarda 3 yıldız al.', kosul: function () { return (yildizlar['tecvid:karisik:0'] || 0) >= 3; } },
+    { id: 'zor', grup: 'yaris', simge: 'kronometre', nl: 'Durfal', tr: 'Cesur yarışçı', nasilNl: 'Speel de Moeilijke wedstrijd.', nasilTr: 'Zor yarışı oyna.', kosul: function () { return (rozet.zor.oyun || 0) >= 1; } },
+    { id: 'zirve', grup: 'yaris', simge: 'zirve', nl: 'Topper', tr: 'Zirve', nasilNl: 'Heb 16 of meer van de 20 goed in de Moeilijke wedstrijd.', nasilTr: 'Zor yarışta 20 sorudan en az 16’sını bil.', kosul: function () { return (rozet.zor.enIyi || 0) >= 16; } },
+    { id: 'canli', grup: 'yaris', simge: 'sinif', nl: 'Samen in de les', tr: 'Sınıfla yarıştım', nasilNl: 'Speel een live wedstrijd mee in de les.', nasilTr: 'Derste bir canlı yarışa katıl.', kosul: function () { return (rozet.canli.oyun || 0) >= 1; } },
+    { id: 'podyum', grup: 'yaris', simge: 'podyum', nl: 'Op het podium', tr: 'Podyumda', nasilNl: 'Eindig bij de eerste 3 in een live wedstrijd.', nasilTr: 'Canlı yarışta ilk 3’e gir.', kosul: function () { var y = rozet.canli.enIyiYer; return y > 0 && y <= 3; } },
+    { id: 'birinci', grup: 'yaris', simge: 'kupa', nl: 'Winnaar', tr: 'Birinci', nasilNl: 'Word eerste in een live wedstrijd.', nasilTr: 'Canlı yarışta birinci ol.', kosul: function () { return rozet.canli.enIyiYer === 1; } },
+    { id: 'devam', grup: 'devam', simge: 'takvimTik', nl: 'Volhouder', tr: 'Devamlı', nasilNl: 'Speel in 3 verschillende weken.', nasilTr: '3 farklı haftada oyna.', ilerleme: function () { return [say(rozet.haftalar), 3]; } },
+  ];
+  function rozetTamam(r) { if (r.kosul) return r.kosul(); var i = r.ilerleme(); return i[0] >= i[1]; }
+  function rozetGrubu(r) { return r.grup === 'bronz' || r.grup === 'gumus' || r.grup === 'altin' ? 'ogrenme' : r.grup; }
+  function madalya(r, kazanildi, sinif) {
+    return '<svg class="madalya' + (kazanildi ? '' : ' kilitli') + (sinif ? ' ' + sinif : '') + '" viewBox="0 0 64 64" aria-hidden="true" style="--rr:' + ROZET_RENK[r.grup] + '">' +
+      '<g class="m-dis"><rect x="13" y="13" width="38" height="38" rx="4"/><rect x="13" y="13" width="38" height="38" rx="4" transform="rotate(45 32 32)"/></g>' +
+      '<circle class="m-ic" cx="32" cy="32" r="17.5"/><g class="m-simge" transform="translate(20 20)">' + ROZET_SIMGE[r.simge] + '</g></svg>';
+  }
+  function rozetAdi(r) { return r.nl + (r.alt ? ' (' + r.alt.nl + ')' : ''); }
+  function rozetAdiTr(r) { return r.tr + (r.alt ? ' (' + r.alt.tr + ')' : ''); }
+  function haftaKodu(t) {
+    var d = new Date(t); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+    var y1 = new Date(d.getFullYear(), 0, 4);
+    return d.getFullYear() + '-' + (1 + Math.round(((d - y1) / 864e5 - 3 + (y1.getDay() + 6) % 7) / 7));
+  }
+  // Bir şey yapıldı: kaydet, rozetlere bak
+  function rozetOlay(tur, veri) {
+    rozet.haftalar[haftaKodu(Date.now())] = 1;
+    if (tur === 'sohbet') rozet.sohbet[veri] = 1;
+    if (tur === 'zor') { rozet.zor.oyun = (rozet.zor.oyun || 0) + 1; rozet.zor.enIyi = Math.max(rozet.zor.enIyi || 0, veri.dogru || 0); }
+    if (tur === 'canli') {
+      rozet.canli.oyun = (rozet.canli.oyun || 0) + 1;
+      if (veri.yer > 0 && (!rozet.canli.enIyiYer || veri.yer < rozet.canli.enIyiYer)) rozet.canli.enIyiYer = veri.yer;
+    }
+    yaz('dersler-rozet', rozet);
+    rozetKontrol();
+  }
+  document.addEventListener('canli-bitti', function (e) { rozetOlay('canli', e.detail || {}); });
+  var rozetSira = [], rozetGosteriliyor = false;
+  function rozetKontrol(sessiz) {
+    var yeni = [];
+    ROZETLER.forEach(function (r) {
+      if (rozet.k[r.id]) return;
+      var tamam = false;
+      try { tamam = rozetTamam(r); } catch (e) {}
+      if (tamam) { rozet.k[r.id] = Date.now(); yeni.push(r); }
+    });
+    if (!yeni.length) return;
+    yaz('dersler-rozet', rozet);
+    if (sessiz) return;
+    rozetSira.push(yeni.length > 1 ? { toplu: yeni, zaman: Date.now() } : { r: yeni[0], zaman: Date.now() });   // aynı anda kazanılanlar tek bildirimde
+    rozetBildir();
+  }
+  var rozetKutu = document.createElement('div');
+  rozetKutu.className = 'rozet-bildirim-yer';
+  rozetKutu.setAttribute('role', 'status');
+  document.body.appendChild(rozetKutu);
+  function rozetBildir() {
+    if (rozetGosteriliyor || !rozetSira.length) return;
+    var x = rozetSira.shift();
+    rozetGosteriliyor = true;
+    var r = x.r || x.toplu[0], iki = x.toplu && x.toplu.length === 2;
+    rozetKutu.innerHTML = '<a class="rozet-bildirim" href="#/rozetler">' + madalya(r, true) + '<span><small>' +
+      (x.toplu ? x.toplu.length + ' nieuwe badges!<span class="tr" lang="tr"> · ' + x.toplu.length + ' yeni rozet!</span>' : 'Nieuwe badge!<span class="tr" lang="tr"> · Yeni rozet!</span>') +
+      '</small><b>' + (iki ? esc(rozetAdi(x.toplu[0]) + ' + ' + rozetAdi(x.toplu[1])) : x.toplu ? 'Bekijk je badges' : esc(rozetAdi(r))) + '</b>' +
+      '<small class="tr" lang="tr">' + (iki ? esc(rozetAdiTr(x.toplu[0]) + ' + ' + rozetAdiTr(x.toplu[1])) : x.toplu ? 'Rozetlerine bak' : esc(rozetAdiTr(r))) + '</small></span></a>';
+    if (window.SES && Date.now() - x.zaman < 1500) SES.cal('rekor');      // sırada beklemiş bildirim ses çıkarmaz (oyunun ortasına düşmesin)
+    setTimeout(function () {
+      var el = rozetKutu.querySelector('.rozet-bildirim');
+      if (el) el.classList.add('gidiyor');
+      setTimeout(function () { rozetKutu.innerHTML = ''; rozetGosteriliyor = false; rozetBildir(); }, 350);
+    }, 4200);
+  }
+  function rozetSeridi() {
+    var kaz = ROZETLER.filter(function (r) { return rozet.k[r.id]; }).sort(function (a, b) { return rozet.k[b.id] - rozet.k[a.id]; });
+    return '<a class="rozet-serit" href="#/rozetler"><span class="rs-madalyalar">' +
+      (kaz.length ? kaz.slice(0, 3).map(function (r) { return madalya(r, true); }).join('') : madalya(ROZETLER[0], false)) + '</span>' +
+      '<span class="rs-yazi">Mijn badges<small class="tr" lang="tr">Rozetlerim</small></span><span class="rs-sayi"><b>' + kaz.length + '</b> / ' + ROZETLER.length + '</span><span class="ok" aria-hidden="true">›</span></a>';
+  }
+  function rozetSayfasi() {
+    document.title = 'Mijn badges · Ahi Evran Camii';
+    ustGeri('#/', 'Alle weken', 'Tüm haftalar', 'Mijn badges', 'Rozetlerim');
+    var kac = ROZETLER.filter(function (r) { return rozet.k[r.id]; }).length;
+    var tarih = function (t) { var d = new Date(t); try { return d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }) + ' · ' + d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' }); } catch (e) { return ''; } };
+    govde.innerHTML = '<div class="rozetler"><h1>Mijn badges<span class="tr" lang="tr"> · Rozetlerim</span></h1>' +
+      '<p class="giris"><b>' + kac + ' / ' + ROZETLER.length + '</b> behaald. Speel de spellen, lees de verhalen en doe mee met de wedstrijden. ' +
+      '<span class="tr" lang="tr">' + ROZETLER.length + ' rozetten ' + kac + ' tanesi kazanıldı. Oyunları oyna, hikâyeleri oku, yarışlara katıl.</span></p>' +
+      ROZET_GRUP.map(function (g) {
+        var l = ROZETLER.filter(function (r) { return rozetGrubu(r) === g.id; });
+        return '<section class="rozet-grup"><h2>' + g.nl + '<span class="tr" lang="tr"> · ' + g.tr + '</span></h2><ul class="rozet-liste">' + l.map(function (r) {
+          var k = rozet.k[r.id], i = !k && r.ilerleme ? r.ilerleme() : null;
+          return '<li class="rozet-k' + (k ? ' kazanildi' : '') + '">' + madalya(r, !!k) +
+            '<b>' + esc(rozetAdi(r)) + '</b><small class="tr" lang="tr">' + esc(rozetAdiTr(r)) + '</small>' +
+            '<p class="nasil-k">' + esc(r.nasilNl) + '<span class="tr" lang="tr">' + esc(r.nasilTr) + '</span></p>' +
+            (k ? '<p class="ne-zaman">✓ ' + tarih(k) + '</p>'
+               : i ? '<p class="ilerleme"><span class="il-yol"><span style="width:' + Math.min(100, Math.round(100 * i[0] / i[1])) + '%"></span></span>' + Math.min(i[0], i[1]) + ' / ' + i[1] + '</p>' : '') +
+            '</li>';
+        }).join('') + '</ul></section>';
+      }).join('') +
+      '<p class="not">Je badges staan alleen op dit apparaat. <span class="tr" lang="tr">Rozetlerin sadece bu cihazda durur.</span></p></div>';
+  }
+
+  // =========================================================
   // Sayfalar
   // =========================================================
   var AMBLEM = '<svg class="amblem" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="12" fill="currentColor" opacity=".14"/>' +
@@ -1691,6 +1882,7 @@ window.DERS = {
       (hatalar.length ? '<div class="hata">' + hatalar.map(esc).join('<br>') + '</div>' : '') +
       '<a class="yaris-serit canli-serit" href="#/canli"><span>Live wedstrijd in de les<small class="tr" lang="tr">Derste canlı yarış</small></span><span class="ok" aria-hidden="true">›</span></a>' +
       (D.tecvid ? '<a class="yaris-serit tecvid-serit" href="#/tecvid"><span>Tecvid: alle regels op één plek<small class="tr" lang="tr">Tecvid: bütün kurallar tek yerde</small></span><span class="ok" aria-hidden="true">›</span></a>' : '') +
+      rozetSeridi() +
       kartlar + '</div>';
   }
 
@@ -1729,7 +1921,7 @@ window.DERS = {
     kartlariBagla(govde);
     bloklar.forEach(function (b, bi) {
       var yer = { hafta: haftaId, konu: konuId, bi: bi };
-      var s = govde.querySelector('[data-sohbet="' + bi + '"]'); if (s) sohbetKur(s, b);
+      var s = govde.querySelector('[data-sohbet="' + bi + '"]'); if (s) sohbetKur(s, b, yer);
       var q = govde.querySelector('[data-quiz="' + bi + '"]'); if (q) quizKur(q, b, yer);
       var e = govde.querySelector('[data-ezber="' + bi + '"]'); if (e) ezberKur(e, b, yer);
       var si = govde.querySelector('[data-sirala="' + bi + '"]'); if (si) siralaKur(si, b, yer);
@@ -1828,6 +2020,7 @@ window.DERS = {
       else { acik = null; kalemGoster(false); if (p[2] === 'karisik') tecvidKarisik(); else tecvidAna(); }
     }
     else if (p[1] === 'canli') { acik = null; kalemGoster(false); canliSayfasi(); }
+    else if (p[1] === 'rozetler') { acik = null; kalemGoster(false); rozetSayfasi(); }
     else if (!h) { acik = null; kalemGoster(false); anaSayfa(); }
     else if (kilitli(h)) { acik = null; kalemGoster(false); haftaKilidi(h); }
     else if (p[2] === 'yaris') { acik = null; kalemGoster(false); yarisSayfasi(h); }
@@ -1862,6 +2055,7 @@ window.DERS = {
         if (h && h.acilis && isNaN(acilisi(h))) hatalar.push('haftalar/' + id + '.js: acilis yanlış yazılmış, örnek: 2026-11-28T13:00');
       });
       yonlendir();
+      rozetKontrol();               // daha önce kazanılmış ama henüz verilmemiş rozetler
     });
   });
 })();

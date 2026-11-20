@@ -581,3 +581,49 @@ body.kalem-acik .ik { cursor:crosshair }
   .canli-secenekler { grid-template-columns:1fr }
   .canli-secenekler.n3 li:last-child { grid-column:auto }
 }
+
+/* ---------- Rozetler ---------- */
+.madalya { width:64px; height:64px; flex:none; overflow:visible }
+.madalya .m-dis { fill:var(--rr) }
+.madalya .m-ic { fill:var(--kart); stroke:var(--rr); stroke-width:2 }
+.madalya .m-simge { fill:none; stroke:var(--rr); stroke-width:2; stroke-linecap:round; stroke-linejoin:round }
+.madalya.kilitli .m-dis { fill:var(--cizgi) }
+.madalya.kilitli .m-ic { stroke:var(--cizgi) }
+.madalya.kilitli .m-simge { stroke:var(--soluk); opacity:.6 }
+.rozet-serit { display:flex; align-items:center; gap:12px; background:var(--kart); border:1.5px solid var(--cizgi); border-radius:14px; padding:8px 14px 8px 10px; margin:-6px 0 20px; text-decoration:none; color:var(--metin); font-weight:700; line-height:1.25 }
+.rozet-serit:hover { border-color:var(--metin) }
+.rs-madalyalar { display:flex; flex:none }
+.rs-madalyalar .madalya { width:38px; height:38px }
+.rs-madalyalar .madalya + .madalya { margin-left:-10px }
+.rs-yazi { flex:1; min-width:0 }
+.rs-yazi small { display:block }
+.rs-sayi { font-variant-numeric:tabular-nums; white-space:nowrap }
+.rs-sayi b { font-family:var(--f-bas); font-size:20px }
+.rozet-serit .ok { font-size:26px; line-height:1; color:var(--soluk) }
+.rozetler h1 { font-family:var(--f-bas); font-weight:800; font-size:clamp(26px,5vw,34px); line-height:1.15; margin:0 0 6px }
+.rozetler h1 .tr { font-weight:600 }
+.rozet-grup h2 { font-family:var(--f-bas); font-weight:800; font-size:21px; margin:24px 0 10px }
+.rozet-grup h2 .tr { font-weight:600 }
+.rozet-liste { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px }
+.rozet-k { display:grid; justify-items:center; align-content:start; gap:2px; text-align:center; background:var(--kart); border:1px solid var(--cizgi); border-radius:16px; padding:14px 10px 12px }
+.rozet-k .madalya { width:76px; height:76px; margin-bottom:6px }
+.rozet-k > b { font-size:16px; line-height:1.2 }
+.rozet-k > small { font-weight:600; font-size:14px }
+.rozet-k:not(.kazanildi) > b, .rozet-k:not(.kazanildi) > small { color:var(--soluk) }
+.nasil-k { font-size:13.5px; line-height:1.35; color:var(--soluk); margin:6px 0 0 }
+.nasil-k .tr { display:block; margin-top:2px }
+.ne-zaman { font-size:13px; font-weight:700; color:var(--ok); margin:8px 0 0 }
+.ilerleme { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:var(--soluk); margin:8px 0 0; width:100%; justify-content:center; font-variant-numeric:tabular-nums }
+.il-yol { flex:0 1 70px; height:8px; border-radius:4px; background:var(--acik); overflow:hidden }
+.il-yol span { display:block; height:100%; background:var(--yildiz) }
+.rozet-bildirim-yer { position:fixed; z-index:30; top:calc(10px + env(safe-area-inset-top, 0px)); left:50%; transform:translateX(-50%); width:min(92vw, 380px); pointer-events:none }
+.rozet-bildirim { pointer-events:auto; display:flex; align-items:center; gap:12px; background:var(--bant); color:var(--bant-yazi); border-radius:18px; padding:10px 16px 10px 10px; text-decoration:none; box-shadow:0 10px 30px rgba(10,16,30,.35); animation:rozet-gel .45s cubic-bezier(.2,.9,.3,1.25) }
+.rozet-bildirim.gidiyor { animation:rozet-git .35s ease-in forwards }
+.rozet-bildirim .madalya { width:56px; height:56px }
+.rozet-bildirim .madalya .m-ic { fill:var(--bant-yazi) }
+.rozet-bildirim span { min-width:0 }
+.rozet-bildirim small { display:block; font-size:13px; font-weight:600; color:var(--bant-soluk) }
+.rozet-bildirim small.tr, .rozet-bildirim small .tr { color:var(--bant-tr) }
+.rozet-bildirim b { display:block; font-family:var(--f-bas); font-size:19px; line-height:1.2 }
+@keyframes rozet-gel { from { opacity:0; transform:translateY(-24px) scale(.9) } }
+@keyframes rozet-git { to { opacity:0; transform:translateY(-16px) } }
