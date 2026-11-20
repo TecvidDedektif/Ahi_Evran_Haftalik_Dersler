@@ -16,6 +16,13 @@
        acik         deneme başladı, henüz bitmedi
        deneme       bu hafta kaç kez oynandı
 
+   Canlı yarış (derste büyük ekran + telefonlar):
+     canli/oyun                       { pin, durum, hafta, no, toplam, sure, basla, soru, secenekler,
+                                        secenek, dogruSecim, dagilim, oyuncular }   sadece hoca yazar
+       durum: bekle (katılım) | soru | cevap (sonuç gösteriliyor) | bitti
+     canli/oyun/oyuncular/<uid>       { ad, pin, cevapNo, secim, zaman }   çocuk kendi satırını yazar
+     Hoca, kullanıcı adı "hoca" olan hesaptır (hoca@ahievran.example).
+
    Günde bir hak: deneme oyun BAŞLARKEN sunucuya yazılır. Kurallar aynı gün
    ikinci başlangıcı reddeder. Gün, sunucu saatine (UTC) göre değişir:
    Hollanda'da kışın 01:00, yazın 02:00.
@@ -190,5 +197,84 @@ window.TABLO = (function () {
     });
   }
 
-  return { hesap: hesap, girisYap: girisYap, cikis: cikis, ogrenci: ogrenci, durum: durum, basla: basla, bitir: bitir, oku: liste, yeniHak: yeniHak, ayar: AYAR };
+  // ---------- Canlı yarış ----------
+  var OYUN = 'canli/oyun', OYUNCU = 'canli/oyun/oyuncular';
+  function kodla(v) {
+    if (v === null || v === undefined) return { nullValue: null };
+    if (typeof v === 'boolean') return { booleanValue: v };
+    if (typeof v === 'number') return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+    if (typeof v === 'string') return { stringValue: v };
+    if (v instanceof Date) return { timestampValue: v.toISOString() };
+    if (Array.isArray(v)) return { arrayValue: { values: v.map(kodla) } };
+    var f = {}; Object.keys(v).forEach(function (k) { f[k] = kodla(v[k]); });
+    return { mapValue: { fields: f } };
+  }
+  function coz(x) {
+    if (!x) return undefined;
+    if ('nullValue' in x) return null;
+    if ('booleanValue' in x) return x.booleanValue;
+    if ('integerValue' in x) return parseInt(x.integerValue, 10);
+    if ('doubleValue' in x) return Number(x.doubleValue);
+    if ('stringValue' in x) return x.stringValue;
+    if ('timestampValue' in x) return Date.parse(x.timestampValue);          // ms
+    if ('arrayValue' in x) return (x.arrayValue.values || []).map(coz);
+    if ('mapValue' in x) return alanlar(x.mapValue.fields);
+    return undefined;
+  }
+  function alanlar(f) { var o = {}; Object.keys(f || {}).forEach(function (k) { o[k] = coz(f[k]); }); return o; }
+  // Tarih alanları (basla) ms olarak gelir; geri yazarken Date olur.
+  function oyunKodla(o) { var k = {}; Object.keys(o).forEach(function (a) { k[a] = a === 'basla' && typeof o[a] === 'number' ? new Date(o[a]) : o[a]; }); return k; }
+  function yetkiliOku(yol) {
+    return token().then(function (t) { return iste(taban() + '/' + yol + anahtar() + (yol === OYUNCU ? '&pageSize=300' : ''), { headers: { Authorization: 'Bearer ' + t } }); });
+  }
+  function yazilar(w) { return token().then(function (t) { return jsonGonder(taban() + ':commit' + anahtar(), { writes: w }, t); }); }
+  function guncelleme(yol, nesne, maske, zamanlar) {
+    var f = {}; Object.keys(nesne).forEach(function (k) { f[k] = kodla(nesne[k]); });
+    var w = { update: { name: veriYolu() + '/' + yol, fields: f } };
+    if (maske) w.updateMask = { fieldPaths: maske };
+    if (zamanlar) w.updateTransforms = zamanlar.map(function (a) { return { fieldPath: a, setToServerValue: 'REQUEST_TIME' }; });
+    return w;
+  }
+  var canli = {
+    // Yarışın durumu; yoksa null
+    oyun: function () { return yetkiliOku(OYUN).then(function (r) { return r.durum === 404 ? null : alanlar(r.json.fields); }); },
+    // Bu çocuğun satırı; yoksa null
+    benim: function (uid) { return yetkiliOku(OYUNCU + '/' + encodeURIComponent(uid)).then(function (r) { return r.durum === 404 ? null : alanlar(r.json.fields); }); },
+    // Hoca: bütün oyuncular
+    oyuncular: function () {
+      return yetkiliOku(OYUNCU).then(function (r) {
+        return (((r.json || {}).documents) || []).map(function (d) { var o = alanlar(d.fields); o.uid = String(d.name).split('/').pop(); return o; });
+      });
+    },
+    // Hoca: bu soruya kaç kişi cevap verdi (ucuz sayım)
+    cevapSayisi: function (no) {
+      var q = { structuredAggregationQuery: {
+        structuredQuery: { from: [{ collectionId: 'oyuncular' }], where: { fieldFilter: { field: { fieldPath: 'cevapNo' }, op: 'EQUAL', value: { integerValue: String(no) } } } },
+        aggregations: [{ alias: 'n', count: {} }] } };
+      return token().then(function (t) { return jsonGonder(taban() + '/' + OYUN + ':runAggregationQuery' + anahtar(), q, t); }).then(function (r) {
+        var a = (r.json || [])[0];
+        return a && a.result && a.result.aggregateFields ? coz(a.result.aggregateFields.n) : 0;
+      });
+    },
+    // Hoca: yarışın bütün durumunu yazar. basla=true ise soru sunucu saatiyle başlar; dönüş: o an (ms)
+    yaz: function (o, basla) {
+      return yazilar([guncelleme(OYUN, oyunKodla(o), null, basla ? ['basla'] : null)]).then(function (r) {
+        var w = (((r.json || {}).writeResults) || [])[0] || {}, d = (w.transformResults || [])[0];
+        return d && d.timestampValue ? Date.parse(d.timestampValue) : null;
+      });
+    },
+    // Hoca: önceki yarışın oyuncularını siler
+    temizle: function () {
+      return canli.oyuncular().then(function (l) {
+        if (!l.length) return;
+        return yazilar(l.map(function (o) { return { delete: veriYolu() + '/' + OYUNCU + '/' + o.uid }; }));
+      });
+    },
+    // Çocuk: yarışa katılır (ad hocanın listesinden)
+    katil: function (ogr, pin) { return yazilar([guncelleme(OYUNCU + '/' + ogr.uid, { ad: ogr.ad, pin: pin, cevapNo: -1, secim: -1 }, null, ['zaman'])]); },
+    // Çocuk: o anki soruya cevap
+    cevapla: function (uid, no, secim) { return yazilar([guncelleme(OYUNCU + '/' + uid, { cevapNo: no, secim: secim }, ['cevapNo', 'secim'], ['zaman'])]); },
+  };
+
+  return { hesap: hesap, girisYap: girisYap, cikis: cikis, ogrenci: ogrenci, durum: durum, basla: basla, bitir: bitir, oku: liste, yeniHak: yeniHak, canli: canli, ayar: AYAR };
 })();

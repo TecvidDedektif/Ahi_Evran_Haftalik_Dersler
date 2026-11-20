@@ -10,6 +10,11 @@
 //   - Puan doğru sayısıyla tutarlı olmalı: her doğru 100 puan, hız için en fazla 50 ek puan.
 //   - Kimse silemez; silmeyi hoca Firebase panelinden yapar.
 //   - "ogrenciler" listesini çocuklar okuyamaz, sadece kendi satırlarını görür.
+//
+// Canlı yarış (derste):
+//   - Yarışı sadece hoca hesabı (kullanıcı adı "hoca") açar ve yönetir.
+//   - Çocuk sadece kendi satırına yazar: katılırken listedeki adı ve ekrandaki kod,
+//     cevaplarken o anki soruya bir kez ve süre içinde. Puanı hoca hesaplar.
 
 rules_version = '2';
 service cloud.firestore {
@@ -20,6 +25,10 @@ service cloud.firestore {
     }
     function listedekiAd(uid) {
       return get(/databases/$(database)/documents/ogrenciler/$(uid)).data.ad;
+    }
+
+    function hoca() {
+      return request.auth != null && request.auth.token.email == 'hoca@ahievran.example';
     }
 
     match /ogrenciler/{uid} {
@@ -64,6 +73,50 @@ service cloud.firestore {
       allow create: if sahibi() && sekil() && basliyor();
       allow update: if sahibi() && sekil() && (basliyor() || bitiyor());
       allow delete: if false;
+    }
+
+    // ---------- Canlı yarış ----------
+    match /canli/oyun {
+      allow read: if request.auth != null;
+      allow write: if hoca();
+    }
+
+    match /canli/oyun/oyuncular/{uid} {
+      function oyun() {
+        return get(/databases/$(database)/documents/canli/oyun).data;
+      }
+      function sahibi() {
+        return request.auth != null && request.auth.uid == uid && listede(uid);
+      }
+      function sekil() {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['ad', 'pin', 'cevapNo', 'secim', 'zaman'])
+          && d.keys().hasAll(['ad', 'pin', 'cevapNo', 'secim', 'zaman'])
+          && d.zaman == request.time;
+      }
+      // Katılıyor: ekrandaki kod, listedeki ad, henüz cevap yok
+      function katiliyor() {
+        let d = request.resource.data;
+        let o = oyun();
+        return d.ad == listedekiAd(uid) && d.pin == o.pin && o.durum != 'bitti'
+          && d.cevapNo == -1 && d.secim == -1
+          && (resource == null || resource.data.pin != o.pin);
+      }
+      // Cevaplıyor: o anki soruya, bir kez, süre içinde
+      function cevapliyor() {
+        let d = request.resource.data;
+        let o = oyun();
+        return resource != null && resource.data.pin == o.pin
+          && d.ad == resource.data.ad && d.pin == resource.data.pin
+          && o.durum == 'soru' && d.cevapNo == o.no && resource.data.cevapNo != o.no
+          && d.secim is int && d.secim >= 0 && d.secim < o.secenek
+          && request.time < o.basla + duration.value(o.sure + 2, 's');
+      }
+
+      allow get: if (request.auth != null && request.auth.uid == uid) || hoca();
+      allow list, delete: if hoca();
+      allow create: if sahibi() && sekil() && katiliyor();
+      allow update: if sahibi() && sekil() && (katiliyor() || cevapliyor());
     }
   }
 }

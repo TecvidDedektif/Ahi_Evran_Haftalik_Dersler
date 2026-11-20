@@ -9,6 +9,7 @@ Adres (Pages açıldıktan sonra): https://tecviddedektif.github.io/Ahi_Evran_Ha
 - **Sohbet:** konular hikâye gibi adım adım açılır. Çocuk "Sen ne dersin?" sorusuna cevap seçer, sonra ters köşe gelir.
 - **İşaret kalemi:** konu sayfalarında sağ alttaki "Stift · Kalem" düğmesi. Dört renk ve silgi var. Kelimeye dokununca ya da parmak cümlenin üstünden yana kaydırılınca işaretlenir.
 - **Zor yarış ve puan tablosu:** 40 zor sorudan her oyunda 20'si (her konudan 5), soru başına 30 saniye. Doğru cevap gösterilmez; sonda bilinemeyen sorular, cevabın bulunacağı konuya bağlantıyla listelenir. Hocanın açtığı hesapla giriş yapılır, günde bir hak vardır, haftanın en iyi puanı ortak tabloya yazılır.
+- **Canlı yarış** (`#/canli`): derste büyük ekranla oynanır. Hoca büyük ekranda "hoca" hesabıyla girer, haftayı, soru türünü (normal ya da zor), soru sayısını ve süreyi seçer; ekranda 4 haneli kod çıkar. Çocuklar telefondan kendi hesaplarıyla girip kodu yazar. Soru büyük ekranda, cevap telefonda. Doğru cevap 500 ile 1000 arası puan alır, hızlı olan daha çok. Her sorudan sonra büyük ekranda doğru cevap, kaç kişinin neyi seçtiği ve ara sıralama; sonda podyum. Hocanın ekranı yenilenirse yarış kaldığı yerden devam eder.
 - **Sınıf yarışı:** haftanın sorularıyla isimli yarış. Tek telefonda ya da büyük ekranda sırayla oynanır, tek başına da olur. Herkese 5 soru, soru başına 20 saniye; doğru cevap 100 puan, hızlı cevap 50 puana kadar ek puan.
 - **Tecvid bölümü** (`#/tecvid`): derste öğrenilen bütün tecvid kuralları müfredat sırasıyla; her kuralın anlatımı, renkli örnekleri, oyunu ve quizi var. Bir de bütün kurallardan **karışık tekrar** oyunu. Haftalardaki Kur'an sekmesi o haftanın kuralına bağlanır.
 - **Haftanın açılışı:** her hafta, dersi yapılan cumartesi saat 13:00'te (ders bitince) açılır. O saate kadar ana sayfada kilitli kart görünür: konular yazmaz, sadece ne zaman açılacağı yazar. O haftanın tecvid kuralı da kilitli kalır, karışık tekrar o kuralın kelimelerini sormaz. Açılış saatinde sayfa açıksa kendiliğinden açılır.
@@ -20,7 +21,7 @@ Adres (Pages açıldıktan sonra): https://tecviddedektif.github.io/Ahi_Evran_Ha
 
 Yıldızlar, kalem işaretleri ve sınıf yarışında yazılan isimler sadece o cihazın tarayıcısında durur. Yarış sayfasındaki "İsimleri ve sıralamayı sil" düğmesi isimleri o cihazdan siler.
 
-Zor yarış için hesapları hoca açar (velilerden izin alındı). Sunucuda tutulanlar: kullanıcı adı ve şifre (Firebase Authentication), tabloda görünen ön ad (`ogrenciler`), haftanın en iyi puanı, doğru sayısı ve deneme bilgisi. Oturum bilgisi çocuğun cihazında durur, "Çıkış" ile silinir. Tablo okunurken hiçbir şey gönderilmez; ana sayfa ve konu sayfaları sunucuya hiç bağlanmaz.
+Zor yarış için hesapları hoca açar (velilerden izin alındı). Sunucuda tutulanlar: kullanıcı adı ve şifre (Firebase Authentication), tabloda görünen ön ad (`ogrenciler`), haftanın en iyi puanı, doğru sayısı ve deneme bilgisi. Canlı yarışta sunucuda sadece o anki yarış durur: kod, sorular, oyuncuların ön adı, cevabı ve puanı; yeni yarış açılınca öncekinin oyuncuları silinir. Oturum bilgisi çocuğun cihazında durur, "Çıkış" ile silinir. Tablo okunurken hiçbir şey gönderilmez; ana sayfa ve konu sayfaları sunucuya hiç bağlanmaz.
 
 ## Puan tablosu ve hesaplar (Firebase)
 
@@ -37,6 +38,16 @@ Zor yarış için hesapları hoca açar (velilerden izin alındı). Sunucuda tut
 2. Listede çıkan **User UID**'yi kopyala.
 3. Firestore Database > Data > `ogrenciler` > Add document: Document ID = UID, alan `ad` (string) = tabloda görünecek isim.
 4. Kullanıcı adını ve şifreyi çocuğa kâğıtla ver.
+
+### Canlı yarış için hoca hesabı
+
+1. Authentication > Users > Add user: `hoca@ahievran.example` ve en az 6 karakterli şifre. Bu hesap `ogrenciler` listesine **eklenmez**.
+2. Kuralları (`firestore.rules`) yeniden yapıştırıp Publish et. Kurallar canlı yarışı yönetme yetkisini sadece bu e-postaya verir.
+3. Derste büyük ekranda Canlı yarış > kullanıcı adı `hoca` ve şifre.
+
+Sunucudaki yerler: `canli/oyun` (yarışın durumu, sadece hoca yazar) ve `canli/oyun/oyuncular/<UID>` (çocuk kendi satırına katılır ve cevap verir; aynı soruya ikinci cevap, süre bittikten sonra cevap ve başkasının satırı reddedilir). Puanı hocanın ekranı sunucu saatine göre hesaplar.
+
+Ücretsiz Firebase planında günde 50.000 okuma var. 15 çocukla 10 soruluk bir canlı yarış yaklaşık 10.000–15.000 okuma tutar; günde birkaç yarış rahat sığar.
 
 ### Şifre unutulunca
 
@@ -57,10 +68,10 @@ js/dersler.js         uygulama (sayfalar, sohbet, oyunlar, kalem, yarış)
 haftalar/liste.js     hangi haftalar var, hangi sırayla
 haftalar/hafta-10.js  10. haftanın bütün içeriği
 fonts/                yazı tipleri (lisansları yanında)
-js/tablo.js           ortak puan tablosu (Firebase)
+js/tablo.js           ortak puan tablosu ve canlı yarış (Firebase)
 js/ses.js             oyun sesleri
 tecvid/kurallar.js    tecvid bölümünün bütün içeriği
-firestore.rules       puan tablosunun güvenlik kuralları
+firestore.rules       puan tablosu ve canlı yarışın güvenlik kuralları
 ikon.svg              sekme simgesi
 ```
 
