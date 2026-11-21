@@ -41,3 +41,12 @@ Gerekenler: Python 3 + numpy, ffmpeg, curl, ve üç alan adına erişim:
 
 Kesimlerden emin olunmayanlar spektrogramla tek tek kontrol edildi (2026-11: 110:1 câe, 79:34 câet,
 1:7 ed-dâllîn düzeltildi). Yeni kelimelerde de şüpheli olanlara bakmak iyi olur.
+
+## Ezber sûrelerinin âyet sesi
+
+Ezber bloğundaki her âyetin altındaki "Dinle" düğmesi `ses/ayet/<sûre>-<âyet>.mp3` dosyasını çalar (Hüsarî, muallim).
+Muallim kıraatinde her âyetten sonra uzun bir durak olduğu için kesim temizdir.
+
+1. Sûrenin sesini ve âyet zamanlarını indir (yukarıdaki 2. adım: `mp3/<no>.mp3`, `zaman_<no>.json`).
+2. `python3 ayet_kes.py 112 111` → `ayet/*.mp3`. Bunları `ses/ayet/` klasörüne kopyala.
+3. Hafta dosyasında ezber âyetine `ses: '112-1'` ekle.
