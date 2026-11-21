@@ -10,7 +10,7 @@ Adres (Pages açıldıktan sonra): https://tecviddedektif.github.io/Ahi_Evran_Ha
 - **İşaret kalemi:** konu sayfalarında sağ alttaki "Stift · Kalem" düğmesi. Dört renk ve silgi var. Kelimeye dokununca ya da parmak cümlenin üstünden yana kaydırılınca işaretlenir.
 - **Zor yarış ve puan tablosu:** 40 zor sorudan her oyunda 20'si (her konudan 5), soru başına 30 saniye. Doğru cevap gösterilmez; sonda bilinemeyen sorular, cevabın bulunacağı konuya bağlantıyla listelenir. Hocanın açtığı hesapla giriş yapılır, günde bir hak vardır, haftanın en iyi puanı ortak tabloya yazılır.
 - **Canlı yarış** (`#/canli`): derste büyük ekranla oynanır. Hoca büyük ekranda "hoca" hesabıyla girer (çocuk ekranının altındaki "Hoca mısın?"), haftayı, soru türünü (normal ya da zor), soru sayısını ve süreyi seçer; ekranda 4 haneli kod çıkar. Çocuklar **hesapsız** katılır: telefonda kodu ve adını yazar. Hoca lobide bir ismi ✕ ile çıkarabilir. Soru büyük ekranda, cevap telefonda. Doğru cevap 500 ile 1000 arası puan alır, hızlı olan daha çok. Her sorudan sonra büyük ekranda doğru cevap, kaç kişinin neyi seçtiği ve ara sıralama; sonda podyum. Hocanın ekranı yenilenirse yarış kaldığı yerden devam eder; telefon yenilenirse kod sormadan döner.
-- **Rozetler** (`#/rozetler`): 20 rozet, dört grupta (öğrenme, tecvid, yarışlar, devamlılık). Oyunlardan yıldız, sonuna kadar okunan hikâyeler, kalemle işaretlenen kelimeler, zor yarış, canlı yarış ve farklı haftalarda oynamak rozet kazandırır. Kazanılınca üstte bildirim çıkar (aynı anda kazanılanlar tek bildirimde). Kazanılmamış rozetlerde nasıl kazanılacağı ve ilerleme yazar. Ana sayfada "Rozetlerim" şeridi. Rozetler sadece çocuğun cihazında saklanır. Yeni rozet eklemek: `js/dersler.js` içindeki `ROZETLER` listesine bir satır.
+- **Rozetler** (`#/rozetler`): 22 rozet, dört grupta (öğrenme, tecvid, yarışlar, devamlılık). Oyunlardan yıldız, sonuna kadar okunan hikâyeler, kalemle işaretlenen kelimeler, zor yarış, canlı yarış, ödevler ve farklı haftalarda oynamak rozet kazandırır. Kazanılınca üstte bildirim çıkar (aynı anda kazanılanlar tek bildirimde). Kazanılmamış rozetlerde nasıl kazanılacağı ve ilerleme yazar. Ana sayfada "Rozetlerim" şeridi. Rozetler sadece çocuğun cihazında saklanır. Yeni rozet eklemek: `js/dersler.js` içindeki `ROZETLER` listesine bir satır.
 - **Sınıf yarışı:** haftanın sorularıyla isimli yarış. Tek telefonda ya da büyük ekranda sırayla oynanır, tek başına da olur. Herkese 5 soru, soru başına 20 saniye; doğru cevap 100 puan, hızlı cevap 50 puana kadar ek puan.
 - **Tecvid bölümü** (`#/tecvid`): derste öğrenilen bütün tecvid kuralları müfredat sırasıyla; her kuralın anlatımı, renkli örnekleri, oyunu ve quizi var. Bir de bütün kurallardan **karışık tekrar** oyunu. Haftalardaki Kur'an sekmesi o haftanın kuralına bağlanır.
 - **Haftanın açılışı:** her hafta, dersi yapılan cumartesi saat 13:00'te (ders bitince) açılır. O saate kadar ana sayfada kilitli kart görünür: konular yazmaz, sadece ne zaman açılacağı yazar. O haftanın tecvid kuralı da kilitli kalır, karışık tekrar o kuralın kelimelerini sormaz. Açılış saatinde sayfa açıksa kendiliğinden açılır.
@@ -19,10 +19,13 @@ Adres (Pages açıldıktan sonra): https://tecviddedektif.github.io/Ahi_Evran_Ha
 - **Canlı yarış müziği:** sadece hocanın büyük ekranında. Bekleme ekranında sakin ve neşeli bir ezgi, soru sırasında daha hareketli bir ezgi (son 5 saniyede hızlanır), sonuçta sessizlik, podyumda kısa bir kutlama. Ezgiler bu site için yazıldı ve tarayıcıda üretilir (`js/ses.js`, `PARCALAR`). Üst şeritteki nota düğmesi müziği açıp kapatır; hoparlör kapalıysa müzik de çalmaz.
 - **Sesler:** sadece oyunlarda. Doğru ve yanlış cevap, yarışta her saniye tik-tak (son 5 saniyede daha tiz ve sık), süre dolması, bitiş ve rekor. Ses dosyası yok, sesler tarayıcıda üretilir (`js/ses.js`). Üst şeritteki hoparlör düğmesi sesi açıp kapatır, tercih cihazda saklanır. İlk açılışta sesin açık mı kapalı mı olacağı `ACIK_BASLA` satırından değiştirilir.
 - **Oyunlar ve yıldızlar:** dönen kartlar, mini quiz, "hangi med" oyunu, âyet sıralama.
+- **Mini quiz:** her quizin 10 soruluk havuzu var, her açılışta 6'sı karışık gelir; her soruda 4 seçenek. Cevaplanan soruya "Geri" ile dönülür: verilen cevap ve açıklama görünür ama değiştirilemez. Sonuç ekranında "Cevaplara bak".
+- **Latin okunuş yok:** âyetler ve tecvid kelimeleri sadece Arapçası ve anlamıyla gösterilir; çocuk okumayı Arapçadan yapsın diye. Okunuşu duymak için "Dinle" düğmesi var (kelimelerde ve ezber sûresinin her âyetinde). Bir soru bir âyeti ya da kelimeyi soruyorsa Arapçası sorunun üstünde görünür (`ar` alanı). Hafta dosyalarındaki `okunus` alanları sadece bilgi için durur, ekranda gösterilmez.
+- **Ödevler** (`#/hafta-N/odev`): her haftanın sayfasında "Bu haftanın ödevleri" şeridi, ana sayfadaki kartta "Huiswerk · Ödev 1/4" düğmesi. Dört parça: ezber (sûreyi âyet âyet dinleyip ezberle, "Ezberledim"), tecvid avı (âyette kurala uyan kelimeleri bul), haftanın testi (haftanın bütün mini quizlerinden 10 soru, en az 7 doğru) ve hayatta uygula (10. hafta 7 günlük namaz çizelgesi, 11. hafta cesaret ve abdest görevlerinden en az ikisi). Teslim: bir sonraki ders. Her şey sadece çocuğun cihazında kalır; hoca kimin yaptığını siteden görmez, çocuk derste telefonundan gösterir. Bir haftanın bütün ödevini bitirene "Ödev tamam" rozeti.
 
 ## Gizlilik
 
-Yıldızlar, kalem işaretleri ve sınıf yarışında yazılan isimler sadece o cihazın tarayıcısında durur. Yarış sayfasındaki "İsimleri ve sıralamayı sil" düğmesi isimleri o cihazdan siler.
+Yıldızlar, kalem işaretleri, ödevler (namaz çizelgesi dahil) ve sınıf yarışında yazılan isimler sadece o cihazın tarayıcısında durur. Yarış sayfasındaki "İsimleri ve sıralamayı sil" düğmesi isimleri o cihazdan siler.
 
 Zor yarış için hesapları hoca açar (velilerden izin alındı). Sunucuda tutulanlar: kullanıcı adı ve şifre (Firebase Authentication), tabloda görünen ön ad (`ogrenciler`), haftanın en iyi puanı, doğru sayısı ve deneme bilgisi. Canlı yarışta hesap yoktur: sunucuda sadece o anki yarış durur (kod, sorular, çocukların yazdığı ad, cevap ve puan) ve yeni yarış açılınca öncekiler adlarıyla birlikte silinir. Oturum bilgisi çocuğun cihazında durur, "Çıkış" ile silinir. Tablo okunurken hiçbir şey gönderilmez; ana sayfa ve konu sayfaları sunucuya hiç bağlanmaz.
 
@@ -106,8 +109,8 @@ Konu renkleri (`renk`): `ibadet` yeşil, `siyer` turuncu, `kuran` mavi, `ezber` 
 | `ozet` | Simgeli kısa maddeler | `baslik`, `maddeler` (`simge`, `nl`, `tr`, isteğe bağlı `kaynak`) |
 | `hikaye` | Hepsi birden görünen adım adım anlatım | `baslik`, `adimlar`, `anlam` (`baslik`, `eslesmeler`) |
 | `kartlar` | Dokununca dönen soru-cevap kartları | `kartlar` (`on`, `arka`) |
-| `quiz` | Çoktan seçmeli sorular, yıldız verir | `sorular` (`soru`, `secenekler`, `dogru`, isteğe bağlı `aciklama`) |
-| `ezber` | Âyetler ve "doğru sıraya diz" oyunu, yıldız verir | `ayetler` (`ar`, `okunus`, `nl`, `tr`) |
+| `quiz` | Çoktan seçmeli sorular, yıldız verir; her seferinde havuzdan `goster` kadar (varsayılan 6) | `sorular` (`soru`, `secenekler`, `dogru`, isteğe bağlı `aciklama` ve `ar`: soruda gösterilecek Arapça âyet ya da kelime; seçenek de `{ ar: '...' }` olabilir) |
+| `ezber` | Âyetler (her birinde "Dinle") ve "doğru sıraya diz" oyunu, yıldız verir | `ayetler` (`ar`, `ses`: `ses/ayet/` içindeki dosya, ör. `'112-1'`, `okunus` (gösterilmez), `nl`, `tr`) |
 | `sirala` | Adımları doğru sıraya dizme oyunu (abdest, namaz), yıldız verir | `baslik`, isteğe bağlı `aciklama`, `adimlar` (`simge`, `nl`, `tr`; doğru sırayla) |
 | `medd` | "Hangi med?" oyunu, yıldız verir | `secenekler`, `kelimeler` (`tur`, `yazi`, `okunus`, `nl`, `tr`, `kaynak`), isteğe bağlı `adet`: her türden eşit sayıda seçilecek kelime sayısı |
 | `baglanti` | Başka bir sayfaya düğme; `#/` ile başlayan adres site içinde açılır | `metin`, `dugme`, `adres` |
@@ -133,6 +136,20 @@ zor: [
 ```
 
 Puan: doğru cevap 100, hız için 50'ye kadar ek puan; 20 soruda en çok 3000.
+
+Ödevler için haftanın dosyasına `odev` eklenir (yoksa o haftada ödev yok). Ezber parçası haftanın `ezber` bloğundan, test haftanın `quiz` sorularından kendiliğinden gelir:
+
+```js
+odev: {
+  tecvid: [
+    { kaynak: 'Yâsîn 56', hedef: 'muttasil', dogru: [5],          // doğru kelimelerin sırası, 0'dan başlar
+      kelimeler: ['هُمْ', 'وَأَزْوَٰجُهُمْ', /* … âyetin kelimeleri sırayla … */],
+      aciklama: { nl: '...', tr: '...' } },
+  ],
+  gorev: { tur: 'namaz' },                                        // 7 günlük namaz çizelgesi
+  // ya da: gorev: { enAz: 2, maddeler: [{ nl: '...', tr: '...' }, ...] }   // en az 2 tanesini yap
+},
+```
 
 ## Sohbet bloğu
 

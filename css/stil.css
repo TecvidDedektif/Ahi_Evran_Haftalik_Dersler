@@ -94,7 +94,7 @@ main { padding-top:22px; padding-bottom:96px; min-height:70vh }
 .hafta-bilgi li small { grid-column:2; font-weight:500 }
 .nokta { width:10px; height:10px; border-radius:50%; background:var(--renk); margin-top:7px }
 .hafta-alt { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:14px; flex-wrap:wrap }
-.hafta-dugmeler { display:flex; gap:8px; margin-left:auto }
+.hafta-dugmeler { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; margin-left:auto; min-width:0 }
 .basla, .yaris-d { font-weight:700; font-size:15px; line-height:1.2; border:2px solid var(--metin); border-radius:10px; padding:6px 16px; text-align:center; text-decoration:none }
 .basla { background:var(--metin); color:var(--zemin) }
 .basla::after { content:''; position:absolute; inset:0; border-radius:18px }     /* kartın her yeri haftayı açar */
@@ -187,7 +187,7 @@ main { padding-top:22px; padding-bottom:96px; min-height:70vh }
 .ayetler { margin:0; padding:0; list-style:none; display:grid; gap:14px; counter-reset:ayet }
 .ayetler li { counter-increment:ayet; border-left:4px solid var(--renk); padding-left:12px }
 .ayet { font-size:32px; line-height:1.7 }
-.okunus { font-weight:700 }
+.anlam { font-weight:600 }
 .ayetler li p.tr { font-size:15px }
 .dizilen { margin:0 0 12px; padding-left:24px; display:grid; gap:6px }
 .dizilen li .ar { font-size:24px; display:block; line-height:1.6 }
@@ -231,7 +231,6 @@ main { padding-top:22px; padding-bottom:96px; min-height:70vh }
 .ornek .kelime .kopru { border-width:3px }
 .ornek p { font-size:15px; line-height:1.35 }
 .ornek p small { display:block; color:var(--soluk) }
-.ornek .okunus { margin-bottom:2px }
 .tecvid-ana h1 { font-family:var(--f-bas); font-weight:800; font-size:clamp(26px,5vw,34px); line-height:1.15; margin:0 0 6px }
 .tecvid-ana h1 .tr { font-weight:600 }
 .zor-kart .tecvid-y { flex:none }
@@ -652,3 +651,62 @@ body.kalem-acik .ik { cursor:crosshair }
 .geri-bildirim .dinle { margin-top:10px }
 .canli-aciklama .dinle { font-size:18px }
 .kunye { font-size:13px; color:var(--soluk); margin-top:10px }
+
+/* Soruda alıntılanan âyet (Latin okunuş yerine Arapçası) ve mini quizde geri / ileri */
+p.soru-ar, .soru p.soru-ar { font-family:var(--f-ar); font-weight:400; font-size:28px; line-height:1.9; margin:0 0 8px; text-align:right }
+.canli-soru p.soru-ar { font-size:clamp(34px,4.6vw,58px); text-align:center; margin-bottom:10px }
+.oyuncu-soru p.soru-ar { font-size:24px; text-align:center }
+.quiz-gezinti { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px }
+.quiz-gezinti .sonraki { margin-top:0 }
+.bitis .quiz-gezinti { justify-content:center }
+
+/* Ödevler (#/hafta-N/odev) */
+.odev h1 { font-family:var(--f-bas); font-weight:800; font-size:clamp(26px,5vw,34px); line-height:1.15; margin:0 0 6px }
+.odev h1 .tr { display:block; font-weight:600; font-size:.62em; color:var(--tr); margin-top:2px }
+.odev .giris { margin-bottom:12px }
+.odev-ozet { display:grid; gap:2px; background:var(--acik); border-radius:12px; padding:10px 14px; margin:0 0 16px; font-size:17px }
+.odev-ozet .tr { font-size:15px }
+.odev-ozet.bitti { background:var(--okbg); color:var(--ok) }
+.odev-parca h3 { display:flex; align-items:center; gap:10px; border-left:4px solid var(--renk); padding-left:10px }
+.odev-tik { width:26px; height:26px; flex:none; fill:none; stroke:var(--cizgi); stroke-width:2; stroke-linecap:round; stroke-linejoin:round }
+.odev-parca.tamam h3 .odev-tik circle, .gorev[aria-pressed="true"] .odev-tik circle { fill:var(--ok); stroke:var(--ok) }
+.odev-parca.tamam h3 .odev-tik path, .gorev[aria-pressed="true"] .odev-tik path { stroke:#fff; stroke-width:2.6 }
+.odev-parca > p { margin:0 0 10px; max-width:62ch }
+.odev-parca > p .tr { display:block; font-size:15px }
+.ayetler .ayet-dinle { margin:2px 0 6px }
+.dugme.secim { margin-top:14px }
+.dugme.secim[aria-pressed="true"] { background:var(--ok); border-color:var(--ok); color:var(--zemin) }
+.avci { display:grid; gap:8px; border-top:1px solid var(--cizgi); padding-top:14px; margin-top:14px }
+.avci-gorev { margin:0 } .avci-gorev .tr { display:block; font-size:15px }
+.avci .kaynak { margin:0; color:var(--soluk); font-size:14px }
+.avci-ayet { direction:rtl; display:flex; flex-wrap:wrap; gap:6px }
+.avci-k { font-family:var(--f-ar); font-size:26px; line-height:1.75; padding:0 10px; border:2px solid var(--cizgi); border-radius:10px; background:var(--kart); color:var(--metin); cursor:pointer }
+.avci-k[aria-pressed="true"] { border-color:var(--renk); background:var(--acik) }
+.avci-k.dogru { border-color:var(--ok); background:var(--okbg) }
+.avci-k.yanlis { border-color:var(--no); background:var(--nobg) }
+.avci-k[disabled] { cursor:default }
+.avci .kontrol { justify-self:start }
+.avci .geri-bildirim { margin-top:0 }
+.namaz-tablo { display:grid; grid-template-columns:auto repeat(5,minmax(0,1fr)); gap:6px; align-items:center; margin-top:4px }
+.vakit-ad, .gun-ad { font-size:13px; font-weight:700; line-height:1.15; text-align:center }
+.vakit-ad small, .gun-ad small { display:block; font-weight:500; color:var(--soluk) }
+.gun-ad { text-align:left; white-space:nowrap; padding-right:4px }
+.gun-ad.bugun { color:var(--renk) }
+.vakit { height:40px; border:2px solid var(--cizgi); border-radius:10px; background:var(--kart); color:var(--zemin); cursor:pointer; font:700 18px/1 var(--f) }
+.vakit[aria-pressed="true"] { background:var(--ok); border-color:var(--ok) }
+.vakit[aria-pressed="true"]::after { content:"✓" }
+.vakit[disabled] { opacity:.35; cursor:default }
+.namaz-say { color:var(--soluk); font-weight:600; margin:10px 0 0 }
+.gorev-liste { display:grid; gap:8px }
+.gorev { display:flex; gap:10px; align-items:flex-start; text-align:left; font:600 16px/1.3 var(--f); border:2px solid var(--cizgi); background:var(--kart); color:var(--metin); border-radius:12px; padding:10px 12px; cursor:pointer }
+.gorev .odev-tik { width:24px; height:24px }
+.gorev small.tr { display:block; font-weight:500; color:var(--tr) }
+.gorev[aria-pressed="true"] { border-color:var(--ok); background:var(--okbg) }
+.odev-en-iyi { font-weight:700; color:var(--soluk) }
+.odev-en-iyi:empty { display:none }
+.odev-test { margin-top:4px }
+.odev-not { color:var(--soluk); font-size:14px; margin:16px 0 0 }
+.odev-not .tr { display:block }
+.yaris-serit + .odev-serit { margin-top:-12px }
+.secenek .secenek-ar { display:block; font-size:28px; line-height:1.6; font-weight:400; text-align:right }
+@media (max-width:380px) { .basla, .yaris-d { padding:6px 11px } }
