@@ -1,11 +1,19 @@
 # Tecvid kelimelerinin sesini kesmek
 
-Sitedeki her tecvid kelimesinin sesi, Mahmud Halil el-Husarî'nin muallim (öğretici) kıraatinden
-kesilir (QuranicAudio / Quran.com). Bu klasördeki araçlar bunun için. Siteye bir şey eklemezler;
+Sitedeki tecvid kelimelerinin sesi iki yerden gelir:
+
+- **Tek kelimeler:** Quran.com'un kelime kelime kayıtları. Her kelime ayrı okunmuş, başı ve sonu temiz.
+- **İki kelimelik örnekler** (munfasıl gibi, kural ancak iki kelime bağlanınca duyulur) ve kelime kaydının
+  sonu kesik olup Hüsarî'de temiz bir duraklama bulunan birkaç kelime: Mahmud Halil el-Husarî'nin muallim
+  (öğretici) kıraatinden kesilir (QuranicAudio / Quran.com).
+
+Hüsarî âyeti kesintisiz okuduğu için tek bir kelimeyi o akıştan kesmek başını ve sonunu kopuk bırakıyordu;
+bu yüzden 2026-11'de tek kelimeler Quran.com kayıtlarına geçti. Bu klasördeki araçlar bunun için. Siteye bir şey eklemezler;
 sadece `ses/kelime/*.mp3` dosyalarını ve `tecvid/sesler.js` listesini üretmeye yardım ederler.
 
-Gerekenler: Python 3 + numpy, ffmpeg, curl, ve iki alan adına erişim:
-`api.qurancdn.com` (kelime zamanları) ve `download.quranicaudio.com` (sûre sesleri).
+Gerekenler: Python 3 + numpy, ffmpeg, curl, ve üç alan adına erişim:
+`api.qurancdn.com` (kelime zamanları), `download.quranicaudio.com` (sûre sesleri) ve
+`audio.qurancdn.com` (kelime kelime kayıtlar).
 
 ## Sıra
 
@@ -20,7 +28,16 @@ Gerekenler: Python 3 + numpy, ffmpeg, curl, ve iki alan adına erişim:
 4. `python3 hizala.py`: kendi kaba hizalamamız (âyeti duraklardan parçalara böler, kelimeleri
    hareke sayısına göre ses değişimlerine oturtur). Sadece Quran.com zamanları bir kelimeyi
    çok kısa aldığında (beklenenin yarısından az) kullanılır.
-5. `python3 kes.py`: son kesim; `k/*.mp3` (mono, 64 kbps, ses seviyesi eşitlenmiş, yumuşak giriş/çıkış).
+5. `python3 kes.py`: Hüsarî'de kelimenin sınırları (`kesim`).
+6. `python3 wbw_indir.py`: tek kelimelerin Quran.com kaydı → `wbw/`. Dosya adı kelimenin âyetteki gerçek sırası;
+   API'nin `audio_url` alanı durak işaretli âyetlerde bir kayıyor, ona güvenme.
+7. `python3 kes2.py`: son dosyalar → `k2/*.mp3` (mono, 64 kbps, aynı gürlük, tepe -1 dB). Her kelime için kaynağı
+   seçer (tek kelime → Quran.com; iki kelime ya da kaydın sonu kesikse → Hüsarî), Hüsarî sınırlarını en sessiz
+   ana kaydırır, öndeki/sondaki sessizliği atar, uç ne kadar sesliyse açılışı/kapanışı o kadar uzun tutar
+   (15–80 ms / 30–150 ms). `python3 kenar.py` iki kaynağın uçlarını tablo olarak gösterir.
+
+`k2/` içindekileri `ses/kelime/` klasörüne kopyala. Dosya adları değişmez (`<sûre>-<âyet>-<kelime>.mp3`),
+`tecvid/sesler.js` aynı kalır.
 
 Kesimlerden emin olunmayanlar spektrogramla tek tek kontrol edildi (2026-11: 110:1 câe, 79:34 câet,
 1:7 ed-dâllîn düzeltildi). Yeni kelimelerde de şüpheli olanlara bakmak iyi olur.
