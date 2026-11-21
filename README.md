@@ -19,13 +19,15 @@ Adres (Pages açıldıktan sonra): https://tecviddedektif.github.io/Ahi_Evran_Ha
 - **Canlı yarış müziği:** sadece hocanın büyük ekranında. Bekleme ekranında sakin ve neşeli bir ezgi, soru sırasında daha hareketli bir ezgi (son 5 saniyede hızlanır), sonuçta sessizlik, podyumda kısa bir kutlama. Ezgiler bu site için yazıldı ve tarayıcıda üretilir (`js/ses.js`, `PARCALAR`). Üst şeritteki nota düğmesi müziği açıp kapatır; hoparlör kapalıysa müzik de çalmaz.
 - **Sesler:** sadece oyunlarda. Doğru ve yanlış cevap, yarışta her saniye tik-tak (son 5 saniyede daha tiz ve sık), süre dolması, bitiş ve rekor. Ses dosyası yok, sesler tarayıcıda üretilir (`js/ses.js`). Üst şeritteki hoparlör düğmesi sesi açıp kapatır, tercih cihazda saklanır. İlk açılışta sesin açık mı kapalı mı olacağı `ACIK_BASLA` satırından değiştirilir.
 - **Oyunlar ve yıldızlar:** dönen kartlar, mini quiz, "hangi med" oyunu, âyet sıralama.
+- **Sınıfım** (`#/sinif`): sınıf puan tablosu ve gelişim. **Sadece giriş yapan çocuklar ve hoca görür.** İki sekme: "Bu hafta" (hafta seçilebilir) ve "Genel". Çocuk kendi satırını renkli görür; "Gelişimin" bölümünde haftalara göre puanı, seçili haftanın dökümü (yıldızlar, tecvid avı, haftanın testi, Zor yarış, ezber) ve rozetleri. Giriş yapmış çocuğun bu cihazdaki ilerlemesi kendiliğinden gönderilir (oyun bitince, ödevde bir şey yapınca). Puan: her yıldız 10, tecvid avında her bulunan kelime 10, haftanın testinde her doğru 5, Zor yarışta her doğru 5, ezber 50 (hoca onaylar); "Genel"de her rozet 20. Namaz çizelgesi ve "Ezberledim" gönderilmez.
+  - **Hoca** aynı sayfaya "hoca" hesabıyla girer: bütün çocuklar, bir isme dokununca o çocuğun gelişimi, her satırda **Ezber** düğmesi (sûreyi derste dinleyince dokunur, +50), **Çocuk ekle** (ön ad, kullanıcı adı, şifre; site önerir, şifre bir kere gösterilir, kâğıda yazıp çocuğa verilir) ve **Listeden çıkar** (iki dokunuş; çocuğun bütün satırları silinir, giriş hesabı Firebase panelinden silinir).
 - **Mini quiz:** her quizin 10 soruluk havuzu var, her açılışta 6'sı karışık gelir; her soruda 4 seçenek. Cevaplanan soruya "Geri" ile dönülür: verilen cevap ve açıklama görünür ama değiştirilemez. Sonuç ekranında "Cevaplara bak".
 - **Latin okunuş yok:** âyetler ve tecvid kelimeleri sadece Arapçası ve anlamıyla gösterilir; çocuk okumayı Arapçadan yapsın diye. Okunuşu duymak için "Dinle" düğmesi var (kelimelerde ve ezber sûresinin her âyetinde). Bir soru bir âyeti ya da kelimeyi soruyorsa Arapçası sorunun üstünde görünür (`ar` alanı). Hafta dosyalarındaki `okunus` alanları sadece bilgi için durur, ekranda gösterilmez.
 - **Ödevler** (`#/hafta-N/odev`): her haftanın sayfasında "Bu haftanın ödevleri" şeridi, ana sayfadaki kartta "Huiswerk · Ödev 1/4" düğmesi. Dört parça: ezber (sûreyi âyet âyet dinleyip ezberle, "Ezberledim"), tecvid avı (âyette kurala uyan kelimeleri bul), haftanın testi (haftanın bütün mini quizlerinden 10 soru, en az 7 doğru) ve hayatta uygula (10. hafta 7 günlük namaz çizelgesi, 11. hafta cesaret ve abdest görevlerinden en az ikisi). Teslim: bir sonraki ders. Her şey sadece çocuğun cihazında kalır; hoca kimin yaptığını siteden görmez, çocuk derste telefonundan gösterir. Bir haftanın bütün ödevini bitirene "Ödev tamam" rozeti.
 
 ## Gizlilik
 
-Yıldızlar, kalem işaretleri, ödevler (namaz çizelgesi dahil) ve sınıf yarışında yazılan isimler sadece o cihazın tarayıcısında durur. Yarış sayfasındaki "İsimleri ve sıralamayı sil" düğmesi isimleri o cihazdan siler.
+Yıldızlar, kalem işaretleri, ödevler (namaz çizelgesi dahil) ve sınıf yarışında yazılan isimler sadece o cihazın tarayıcısında durur. "Sınıfım"a giriş yapan çocuğun ön adı, haftalık yıldız sayısı, tecvid avı ve haftanın testi sonucu, rozetleri ve hocanın verdiği ezber onayı Firebase'de saklanır; bunları sadece giriş yapmış, listedeki çocuklar ve hoca okuyabilir (Firestore kuralları). Namaz çizelgesi ve "Ezberledim" hiçbir zaman gönderilmez. Yarış sayfasındaki "İsimleri ve sıralamayı sil" düğmesi isimleri o cihazdan siler.
 
 Zor yarış için hesapları hoca açar (velilerden izin alındı). Sunucuda tutulanlar: kullanıcı adı ve şifre (Firebase Authentication), tabloda görünen ön ad (`ogrenciler`), haftanın en iyi puanı, doğru sayısı ve deneme bilgisi. Canlı yarışta hesap yoktur: sunucuda sadece o anki yarış durur (kod, sorular, çocukların yazdığı ad, cevap ve puan) ve yeni yarış açılınca öncekiler adlarıyla birlikte silinir. Oturum bilgisi çocuğun cihazında durur, "Çıkış" ile silinir. Tablo okunurken hiçbir şey gönderilmez; ana sayfa ve konu sayfaları sunucuya hiç bağlanmaz.
 
@@ -39,6 +41,10 @@ Zor yarış için hesapları hoca açar (velilerden izin alındı). Sunucuda tut
 - Güvenlik kuralları `firestore.rules` dosyasında: Firebase paneli > Firestore Database > Rules > yapıştır > Publish.
 
 ### Yeni çocuk eklemek
+
+Kolay yol: sitede **Sınıfım** sayfasına "hoca" hesabıyla gir, **Çocuk ekle** formunu doldur. Hesap açılır ve çocuk listeye yazılır.
+
+Firebase panelinden de olur:
 
 1. Authentication > Users > Add user: `kullaniciadi@ahievran.example` ve en az 6 karakterli şifre.
 2. Listede çıkan **User UID**'yi kopyala.

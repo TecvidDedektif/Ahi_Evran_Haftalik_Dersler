@@ -4,7 +4,7 @@
    Kütüphane yüklemeyiz: tarayıcının kendi fetch'i yeter.
 
    Hesaplar (Firebase Authentication):
-     Hesapları hoca Firebase panelinden açar. Çocuk sadece kullanıcı adını
+     Hesapları hoca sitedeki "Çocuk ekle" ile (ya da Firebase panelinden) açar. Çocuk sadece kullanıcı adını
      yazar (orhan); site sonuna ALAN'ı ekler (orhan@ahievran.example).
      Giriş bilgisi (oturum anahtarı) sadece bu cihazda saklanır.
 
@@ -23,6 +23,13 @@
      canli/<kod>/oyuncular/<kimlik>   { ad, cevapNo, secim, zaman }   çocuk hesapsız katılır
      Kod 4 hanelidir; yarışı sadece kodu bilen okuyabilir.
      Hoca, kullanıcı adı "hoca" olan hesaptır (hoca@ahievran.example).
+
+   Sınıf tablosu ve gelişim (sadece giriş yapan çocuklar ve hoca okur):
+     ogrenciler/<uid>                 { ad, kullanici }   hoca sitedeki "Çocuk ekle" ile açar
+     haftalar/<hafta>/ilerleme/<uid>  { ad, yildiz, avci, test, son }   çocuk yazar, sadece artar
+     haftalar/<hafta>/ezber/<uid>     { ad, tamam }   hoca derste dinleyip onaylar
+     rozetler/<uid>                   { ad, sayi, liste, son }   çocuğun rozetleri
+     Namaz çizelgesi ve "Ezberledim" gönderilmez; sadece çocuğun cihazında kalır.
 
    Günde bir hak: deneme oyun BAŞLARKEN sunucuya yazılır. Kurallar aynı gün
    ikinci başlangıcı reddeder. Gün, sunucu saatine (UTC) göre değişir:
@@ -288,5 +295,40 @@ window.TABLO = (function () {
     },
   };
 
-  return { hesap: hesap, girisYap: girisYap, cikis: cikis, ogrenci: ogrenci, durum: durum, basla: basla, bitir: bitir, oku: liste, yeniHak: yeniHak, canli: canli, ayar: AYAR };
+  // ---------- Sınıf tablosu ----------
+  var sinif = {
+    // Giriş gerekir: bir koleksiyonun bütün belgeleri / tek belge (yoksa null)
+    liste: function (yol) { return hocaOku(yol, '&pageSize=300').then(belgeler); },
+    belge: function (yol) { return hocaOku(yol).then(function (r) { return r.durum === 404 ? null : alanlar(r.json.fields); }); },
+    // Çocuk: kendi haftalık ilerlemesi ve rozetleri (sunucu saatiyle)
+    ilerlemeYaz: function (hafta, uid, o) { return yazilar([guncelleme('haftalar/' + hafta + '/ilerleme/' + uid, o, null, ['son'])], true); },
+    rozetYaz: function (uid, o) { return yazilar([guncelleme('rozetler/' + uid, o, null, ['son'])], true); },
+    // Hoca: ezber onayı (tamam=false onayı kaldırır)
+    ezberYaz: function (hafta, uid, ad, tamam) {
+      var yol = 'haftalar/' + hafta + '/ezber/' + uid;
+      return yazilar([tamam ? guncelleme(yol, { ad: ad, tamam: true }) : { delete: veriYolu() + '/' + yol }], true);
+    },
+    // Hoca: yeni çocuk hesabı. Hesap açılır (hocanın oturumu değişmez), sonra listeye yazılır.
+    cocukEkle: function (kullanici, sifre, ad) {
+      var k = kullaniciAdi(kullanici);
+      return jsonGonder('https://identitytoolkit.googleapis.com/v1/accounts:signUp' + anahtar(),
+        { email: k + AYAR.alan, password: String(sifre || ''), returnSecureToken: true })
+        .then(function (r) {
+          var uid = (r.json || {}).localId;
+          if (!uid) throw { durum: r.durum, kod: 'BILINMIYOR' };
+          return yazilar([guncelleme('ogrenciler/' + uid, { ad: ad, kullanici: k })], true).then(function () { return { uid: uid, ad: ad, kullanici: k }; });
+        });
+    },
+    // Hoca: çocuğu listeden çıkarır, tablodaki bütün satırlarını siler (giriş hesabı Firebase panelinden silinir)
+    cocukCikar: function (uid, haftalar) {
+      var w = [{ delete: veriYolu() + '/ogrenciler/' + uid }, { delete: veriYolu() + '/rozetler/' + uid }];
+      (haftalar || []).forEach(function (h) {
+        w.push({ delete: veriYolu() + '/haftalar/' + h + '/ilerleme/' + uid });
+        w.push({ delete: veriYolu() + '/haftalar/' + h + '/ezber/' + uid });
+      });
+      return yazilar(w, true);
+    },
+  };
+
+  return { hesap: hesap, girisYap: girisYap, cikis: cikis, ogrenci: ogrenci, durum: durum, basla: basla, bitir: bitir, oku: liste, yeniHak: yeniHak, canli: canli, sinif: sinif, ayar: AYAR };
 })();

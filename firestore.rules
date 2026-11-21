@@ -16,6 +16,14 @@
 //   - Çocuk hesapsız katılır: ekrandaki kodu ve adını yazar. Cevabı o anki soruya
 //     bir kez ve süre içinde verebilir. Puanı hoca hesaplar.
 //   - Yarışı ve oyuncuları sadece kodu bilen görür; listeleme ve silme hocanın.
+//
+// Sınıf tablosu ve gelişim (#/sinif):
+//   - Hesapları hoca sitedeki "Çocuk ekle" ile açar; "ogrenciler" listesini sadece hoca okur ve yazar.
+//   - Tabloyu sadece giriş yapmış, listedeki çocuklar ve hoca görür.
+//   - Çocuk sadece kendi satırını, listedeki kendi ismiyle yazar. Puanlar sadece artabilir
+//     ve sınırlıdır (bir haftada en çok 60 yıldız, 20 tecvid avı, 10 test sorusu; en çok 40 rozet).
+//   - Ezber onayını sadece hoca verir.
+//   - Silmeyi hoca yapar ("Listeden çıkar").
 
 rules_version = '2';
 service cloud.firestore {
@@ -32,8 +40,67 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.email == 'hoca@ahievran.example';
     }
 
+    function girisli() {
+      return request.auth != null && (listede(request.auth.uid) || hoca());
+    }
+
     match /ogrenciler/{uid} {
-      allow get: if request.auth != null && request.auth.uid == uid;
+      allow get: if request.auth != null && (request.auth.uid == uid || hoca());
+      allow list, delete: if hoca();
+      allow create, update: if hoca()
+        && request.resource.data.keys().hasOnly(['ad', 'kullanici'])
+        && request.resource.data.ad is string && request.resource.data.ad.size() >= 1 && request.resource.data.ad.size() <= 20
+        && request.resource.data.kullanici is string;
+    }
+
+    // haftalar/<hafta>/ilerleme/<uid>: çocuğun o haftaki yıldızları, tecvid avı ve haftanın testi
+    match /haftalar/{hafta}/ilerleme/{uid} {
+      function sekil() {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['ad', 'yildiz', 'avci', 'test', 'son'])
+          && d.keys().hasAll(['ad', 'yildiz', 'avci', 'test', 'son'])
+          && d.ad == listedekiAd(uid)
+          && d.yildiz is int && d.yildiz >= 0 && d.yildiz <= 60
+          && d.avci is int && d.avci >= 0 && d.avci <= 20
+          && d.test is int && d.test >= 0 && d.test <= 10
+          && d.son == request.time;
+      }
+      // Puanlar sadece artar (başka bir cihazda daha az yıldız olsa da düşmez)
+      function artiyor() {
+        let d = request.resource.data;
+        return resource == null
+          || (d.yildiz >= resource.data.yildiz && d.avci >= resource.data.avci && d.test >= resource.data.test);
+      }
+      allow get, list: if girisli();
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && hafta.matches('hafta-[0-9]+') && listede(uid) && sekil() && artiyor();
+      allow delete: if hoca();
+    }
+
+    // haftalar/<hafta>/ezber/<uid>: hoca derste dinleyip onaylar
+    match /haftalar/{hafta}/ezber/{uid} {
+      allow get, list: if girisli();
+      allow create, update: if hoca()
+        && request.resource.data.keys().hasOnly(['ad', 'tamam'])
+        && request.resource.data.tamam == true;
+      allow delete: if hoca();
+    }
+
+    // rozetler/<uid>: çocuğun kazandığı rozetler
+    match /rozetler/{uid} {
+      function sekil() {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['ad', 'sayi', 'liste', 'son'])
+          && d.keys().hasAll(['ad', 'sayi', 'liste', 'son'])
+          && d.ad == listedekiAd(uid)
+          && d.liste is list && d.liste.size() <= 40
+          && d.sayi is int && d.sayi == d.liste.size()
+          && d.son == request.time;
+      }
+      allow get, list: if girisli();
+      allow create, update: if request.auth != null && request.auth.uid == uid && listede(uid) && sekil()
+        && (resource == null || request.resource.data.sayi >= resource.data.sayi);
+      allow delete: if hoca();
     }
 
     match /haftalar/{hafta}/skorlar/{uid} {

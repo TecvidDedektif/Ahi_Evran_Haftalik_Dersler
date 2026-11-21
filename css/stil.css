@@ -710,3 +710,66 @@ p.soru-ar, .soru p.soru-ar { font-family:var(--f-ar); font-weight:400; font-size
 .yaris-serit + .odev-serit { margin-top:-12px }
 .secenek .secenek-ar { display:block; font-size:28px; line-height:1.6; font-weight:400; text-align:right }
 @media (max-width:380px) { .basla, .yaris-d { padding:6px 11px } }
+
+/* Sınıf tablosu ve gelişim (#/sinif) */
+.sinif h1 { font-family:var(--f-bas); font-weight:800; font-size:clamp(26px,5vw,34px); line-height:1.15; margin:0 }
+.sinif h1 .tr { display:block; font-weight:600; font-size:.62em; color:var(--tr); margin-top:2px }
+.sinif-bas { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:8px 16px; margin-bottom:14px }
+.sinif-selam { margin:0; font-weight:700; display:flex; align-items:center; gap:10px }
+.sinif-selam .dugme.kucuk { margin-top:0 }
+.sinif-sekmeler { display:grid; grid-template-columns:1fr 1fr; gap:6px; background:var(--acik); padding:5px; border-radius:14px; margin-bottom:12px }
+.sinif-sekme { font:700 16px/1.2 var(--f); border:0; border-radius:10px; padding:9px 8px; background:transparent; color:var(--soluk); cursor:pointer }
+.sinif-sekme small { display:block; font-weight:500; font-size:.8em }
+.sinif-sekme[aria-selected="true"] { background:var(--kart); color:var(--metin); box-shadow:0 1px 0 var(--cizgi) }
+.hafta-cipler { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px }
+.hafta-cip { font:700 14px/1.15 var(--f); border:2px solid var(--cizgi); border-radius:999px; padding:5px 14px; background:var(--kart); color:var(--metin); cursor:pointer }
+.hafta-cip small { display:block; font-weight:500; color:var(--soluk) }
+.hafta-cip[aria-pressed="true"] { border-color:var(--metin); background:var(--metin); color:var(--zemin) }
+.hafta-cip[aria-pressed="true"] small { color:inherit; opacity:.8 }
+.sinif-tablo { list-style:none; margin:0 0 14px; padding:0; display:grid; gap:6px }
+.sinif-tablo li { display:flex; align-items:center; gap:10px; background:var(--acik); border-radius:12px; padding:7px 12px 7px 7px }
+.sinif-tablo li.ben { outline:3px solid var(--metin); outline-offset:-3px }
+.sinif-tablo li.odak { background:var(--okbg) }
+.sinif-tablo li.s1 .sira-no { background:var(--yildiz); color:#172033 }
+.sinif .giris .tr, .sinif .not .tr { display:block; margin-top:2px }
+.sinif-ad { flex:1; min-width:0; text-align:left; font:700 17px/1.2 var(--f); background:none; border:0; color:var(--metin); padding:4px 0; cursor:pointer; overflow-wrap:anywhere }
+.sinif-ad small { font-weight:500; color:var(--soluk) }
+.rozet-say { display:inline-flex; align-items:center; gap:3px; font-weight:700; color:var(--soluk); font-variant-numeric:tabular-nums }
+.rozet-mini { width:18px; height:18px; fill:none; stroke:var(--siyer); stroke-width:2; stroke-linecap:round; stroke-linejoin:round }
+.sinif-puan { font-family:var(--f-bas); font-size:20px; min-width:3.2ch; text-align:right; font-variant-numeric:tabular-nums }
+.ezber-onay { font:700 13px/1 var(--f); border:2px solid var(--ezber); color:var(--ezber); background:var(--kart); border-radius:999px; padding:6px 10px; cursor:pointer }
+.ezber-onay[aria-pressed="true"] { background:var(--ezber); color:var(--zemin) }
+.ezber-onay[aria-pressed="true"]::before { content:"✓ " }
+.gelisim h4 { font-family:var(--f-bas); font-size:17px; margin:16px 0 8px }
+.gelisim h4 small { display:block; font-family:var(--f); font-weight:600; font-size:14px; color:var(--tr) }
+.gelisim-cubuklar { list-style:none; margin:0; padding:0; display:grid; gap:8px }
+.gelisim-cubuklar li { display:grid; grid-template-columns:70px 1fr 3.5ch; align-items:center; gap:10px; font-weight:700 }
+.gc-yol { height:14px; background:var(--acik); border-radius:999px; overflow:hidden }
+.gc-cubuk { display:block; height:100%; background:var(--ibadet); border-radius:999px; min-width:4px }
+.gelisim-cubuklar b { text-align:right; font-variant-numeric:tabular-nums }
+.gelisim-tablo { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums }
+.gelisim-tablo th { text-align:left; font-weight:700; padding:7px 0 }
+.gelisim-tablo th small { display:block; font-weight:500; color:var(--tr); font-size:13px }
+.gelisim-tablo td { padding:7px 0 7px 10px; text-align:right; white-space:nowrap }
+.gelisim-tablo td.p { font-weight:800 }
+.gelisim-tablo tbody tr { border-bottom:1px solid var(--cizgi) }
+.gelisim-tablo tfoot th, .gelisim-tablo tfoot td { font-size:18px }
+.gelisim-rozetler { display:flex; flex-wrap:wrap; gap:6px }
+.gelisim-rozetler .madalya { width:46px; height:46px }
+.puan-nasil { margin:6px 0 10px; background:var(--kart); border:1px solid var(--cizgi); border-radius:12px; padding:10px 14px }
+.puan-nasil summary { font-weight:700; cursor:pointer }
+.puan-nasil ul { margin:8px 0 0; padding-left:18px; display:grid; gap:6px }
+.puan-nasil li .tr { display:block; font-size:14px; color:var(--tr) }
+.sinif-gizlilik .tr { display:block }
+.cocuk-form label { display:block; font-weight:700; margin:12px 0 6px }
+.cocuk-form label:first-child { margin-top:0 }
+.cocuk-form input { width:100%; font:600 18px/1.2 var(--f); padding:10px 12px; border:2px solid var(--soluk); border-radius:12px; background:var(--kart); color:var(--metin) }
+.cocuk-form input:focus-visible { outline:3px solid var(--kuran); outline-offset:1px }
+.cocuk-form .dugme { margin-top:10px }
+.yeni-cocuk .geri-bildirim { margin-top:12px }
+.cocuk-liste { list-style:none; margin:0; padding:0; display:grid; gap:6px }
+.cocuk-liste li { display:flex; align-items:center; justify-content:space-between; gap:10px; border-bottom:1px solid var(--cizgi); padding:6px 0 }
+.cocuk-liste li small { display:block; color:var(--soluk) }
+.cocuk-liste .dugme.kucuk { margin-top:0 }
+.sinif-serit { background:var(--ibadet); color:var(--zemin) }
+.sinif-serit small.tr { color:var(--zemin); opacity:.85 }

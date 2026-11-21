@@ -13,6 +13,7 @@
      #/hafta-10/odev       haftanın ödevleri: ezber, tecvid avı, haftanın testi, hayatta uygula
      #/canli               canlı yarış: hoca büyük ekranda açar, çocuklar kod ve adla katılır
      #/rozetler            kazanılan ve kazanılacak rozetler
+     #/sinif               sınıf tablosu ve gelişim: sadece giriş yapan çocuklar ve hoca (çocuk ekleme, ezber onayı)
      #/tecvid              tecvid bölümü: bütün kurallar
      #/tecvid/ariz         bir kural
      #/tecvid/karisik      bütün kurallardan karışık tekrar oyunu
@@ -45,6 +46,7 @@
      dersler-canli-ben  canlı yarışta çocuğun kodu, rastgele kimliği ve adı
      dersler-rozet    rozetler ve onlar için sayılanlar (okunan hikâyeler, yarışlar, haftalar)
      dersler-odev     ödevler: ezberledim, bulunan tecvid kelimeleri, test puanı, namaz çizelgesi, görevler
+     dersler-gonderildi  sınıf tablosuna en son gönderilen yıldız, ödev ve rozet sayıları (tekrar göndermemek için)
    ============================================================ */
 
 window.DERS = {
@@ -1890,6 +1892,7 @@ window.DERS = {
     }
     yaz('dersler-rozet', rozet);
     rozetKontrol();
+    sinifGonderSonra();             // giriş yapmış çocuğun ilerlemesi sınıf tablosuna
   }
   document.addEventListener('canli-bitti', function (e) { rozetOlay('canli', e.detail || {}); });
   var rozetSira = [], rozetGosteriliyor = false;
@@ -2166,6 +2169,291 @@ window.DERS = {
     guncelle();
   }
 
+  // =========================================================
+  // Sınıf tablosu ve gelişim (#/sinif). Sadece giriş yapan, listedeki çocuklar ve hoca görür.
+  // Puan: yıldız x10, tecvid avı x10, haftanın testi doğru x5, Zor yarış doğru x5, ezber 50 (hoca onaylar);
+  // Genel tabloda her rozet 20. Giriş yapmış çocuğun ilerlemesi kendiliğinden gönderilir.
+  // Namaz çizelgesi ve "Ezberledim" gönderilmez; sadece bu cihazda kalır.
+  // =========================================================
+  var PUAN = { yildiz: 10, avci: 10, test: 5, zor: 5, ezber: 50, rozet: 20 };
+  var sinifBen = null;                 // { uid, ad } ya da { uid, yok: true } (hoca ya da listede olmayan)
+  var gonderZamani = null;
+  function tabloHaftalari() { return D.sira.map(function (id) { return D.haftalar[id]; }).filter(function (h) { return h && !kilitBekliyor(h); }); }
+  function yerelIlerleme(h) {
+    var k = odevler[h.id] || {};
+    return { yildiz: haftaYildizi(h).kazanilan, avci: (k.tecvid || []).filter(Boolean).length, test: k.test || 0 };
+  }
+  function benKimim() {
+    var T = window.TABLO, hs = T && T.hesap();
+    if (!hs) return Promise.resolve(null);
+    if (sinifBen && sinifBen.uid === hs.uid) return Promise.resolve(sinifBen.yok ? null : sinifBen);
+    return T.ogrenci().then(function (o) { sinifBen = o; return o; }, function (e) {
+      if (e && e.kod === 'LISTEDE_YOK') { sinifBen = { uid: hs.uid, yok: true }; return null; }
+      throw e;
+    });
+  }
+  function sinifGonderSonra() {
+    if (!window.TABLO || !TABLO.hesap()) return;
+    clearTimeout(gonderZamani);
+    gonderZamani = setTimeout(function () { sinifGonder(); }, 2000);
+  }
+  // Bu cihazdaki ilerlemeyi gönderir. Sunucudaki daha yüksekse onu korur (başka cihaz).
+  function sinifGonder() {
+    var T = window.TABLO;
+    if (!T || !T.hesap()) return Promise.resolve(false);
+    return benKimim().then(function (ben) {
+      if (!ben) return false;
+      var g = oku('dersler-gonderildi', {});
+      if (!g || g.uid !== ben.uid) g = { uid: ben.uid, haftalar: {}, rozet: -1 };
+      var isler = [];
+      tabloHaftalari().forEach(function (h) {
+        var y = yerelIlerleme(h), o = g.haftalar[h.id];
+        if (!y.yildiz && !y.avci && !y.test) return;
+        if (o && o.yildiz >= y.yildiz && o.avci >= y.avci && o.test >= y.test) return;
+        isler.push(T.sinif.belge('haftalar/' + h.id + '/ilerleme/' + ben.uid).then(function (s) {
+          s = s || {};
+          var yeni = { ad: ben.ad, yildiz: Math.max(y.yildiz, s.yildiz || 0), avci: Math.max(y.avci, s.avci || 0), test: Math.max(y.test, s.test || 0) };
+          return T.sinif.ilerlemeYaz(h.id, ben.uid, yeni).then(function () { g.haftalar[h.id] = { yildiz: yeni.yildiz, avci: yeni.avci, test: yeni.test }; });
+        }));
+      });
+      var benim = ROZETLER.filter(function (r) { return rozet.k[r.id]; }).map(function (r) { return r.id; });
+      if (benim.length && benim.length !== g.rozet) {
+        isler.push(T.sinif.belge('rozetler/' + ben.uid).then(function (s) {
+          var l = benim.slice();
+          ((s && s.liste) || []).forEach(function (x) { if (l.indexOf(x) === -1) l.push(x); });
+          l = l.slice(0, 40);
+          return T.sinif.rozetYaz(ben.uid, { ad: ben.ad, sayi: l.length, liste: l }).then(function () { g.rozet = benim.length; });
+        }));
+      }
+      return Promise.all(isler).then(function () { yaz('dersler-gonderildi', g); return true; });
+    }).catch(function () { return false; });
+  }
+
+  // Bütün haftaların satırlarını toplar: uid -> { uid, ad, kullanici, haftalar: { id: { yildiz, avci, test, zor, ezber } }, rozet, rozetler }
+  function sinifVerisi(hocaMi) {
+    var T = window.TABLO, haftalar = tabloHaftalari(), kisi = {};
+    function al(uid, ad) {
+      if (!kisi[uid]) kisi[uid] = { uid: uid, ad: ad || '', haftalar: {}, rozet: 0, rozetler: [] };
+      if (ad && !kisi[uid].ad) kisi[uid].ad = ad;
+      return kisi[uid];
+    }
+    function hafta(x, id) { if (!x.haftalar[id]) x.haftalar[id] = { yildiz: 0, avci: 0, test: 0, zor: 0, ezber: false }; return x.haftalar[id]; }
+    var isler = [];
+    haftalar.forEach(function (h) {
+      isler.push(T.sinif.liste('haftalar/' + h.id + '/ilerleme').then(function (l) { l.forEach(function (d) { var w = hafta(al(d.id, d.ad), h.id); w.yildiz = d.yildiz || 0; w.avci = d.avci || 0; w.test = d.test || 0; }); }));
+      isler.push(T.sinif.liste('haftalar/' + h.id + '/ezber').then(function (l) { l.forEach(function (d) { if (d.tamam) hafta(al(d.id, d.ad), h.id).ezber = true; }); }));
+      if (h.zor && h.zor.length) isler.push(T.oku(h.id, 300, true).then(function (l) { l.forEach(function (d) { hafta(al(d.id, d.ad), h.id).zor = d.dogru || 0; }); }));
+    });
+    isler.push(T.sinif.liste('rozetler').then(function (l) { l.forEach(function (d) { var x = al(d.id, d.ad); x.rozet = d.sayi || 0; x.rozetler = d.liste || []; }); }));
+    if (hocaMi) isler.push(T.sinif.liste('ogrenciler').then(function (l) { l.forEach(function (d) { var x = al(d.id, d.ad); x.ad = d.ad; x.kullanici = d.kullanici || ''; x.listede = true; }); }));
+    return Promise.all(isler).then(function () {
+      var l = Object.keys(kisi).map(function (k) { return kisi[k]; });
+      // Hoca listesi varsa listede olmayanlar (eski hesaplar) tabloda görünmez
+      if (hocaMi) l = l.filter(function (x) { return x.listede; });
+      return l;
+    });
+  }
+  function haftaPuani(w) { return w ? w.yildiz * PUAN.yildiz + w.avci * PUAN.avci + w.test * PUAN.test + w.zor * PUAN.zor + (w.ezber ? PUAN.ezber : 0) : 0; }
+  function genelPuan(x) { return Object.keys(x.haftalar).reduce(function (t, id) { return t + haftaPuani(x.haftalar[id]); }, 0) + x.rozet * PUAN.rozet; }
+  function haftaEnCok(h) {
+    var o = h.odev || {};
+    return { yildiz: haftaYildizi(h).toplam, avci: (o.tecvid || []).length, test: testAdet(h), zor: h.zor && h.zor.length ? Math.min(ZOR.tur, h.zor.length) : 0, ezber: !!ezberBlogu(h) };
+  }
+
+  var MADALYA_MINI = '<svg class="rozet-mini" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="14" r="6.5"/><path d="M8.5 3.5l3.5 5 3.5-5"/></svg>';
+  function sinifSayfasi() {
+    var T = window.TABLO;
+    document.title = 'Mijn klas · Ahi Evran Camii';
+    ust.className = 'ust';
+    ust.innerHTML = '<div class="kap"><a class="geri" href="#/">‹ Alle weken<small class="tr" lang="tr">Tüm haftalar</small></a>' +
+      '<span class="marka kucuk">Mijn klas<small class="tr" lang="tr">Sınıfım</small></span></div>';
+    var gecerli = true, veri = [], gorunum = 'hafta', haftalar = tabloHaftalari(), secili = haftalar.length ? haftalar[haftalar.length - 1].id : null, odak = null, hocaMi = false, ben = null;
+    temizlik.push(function () { gecerli = false; });
+    function suAn() { return gecerli; }
+    var bilgi = '<p class="not sinif-gizlilik">Alleen voor de klas: je ziet dit pas als je bent ingelogd. Op de server staan je voornaam, je punten en je badges. Je gebedenlijst en “Ik ken hem uit mijn hoofd” blijven op je eigen apparaat.' +
+      '<span class="tr" lang="tr">Sadece sınıf için: giriş yapınca görürsün. Sunucuda ön adın, puanların ve rozetlerin durur. Namaz çizelgen ve “Ezberledim” sadece kendi cihazında kalır.</span></p>';
+    if (!T) { govde.innerHTML = '<div class="sinif"><p class="uyari">' + baglantiHatasi() + '</p></div>'; return; }
+    if (!T.hesap()) return girisEkrani();
+    yukle();
+
+    function girisEkrani(uyari) {
+      govde.innerHTML = '<div class="sinif"><h1>Mijn klas<span class="tr" lang="tr">Sınıfım</span></h1>' +
+        '<p class="giris">Log in en zie de ranglijst van de klas, je punten en hoe je groeit. Je gebruikersnaam en wachtwoord krijg je van je leraar.' +
+        '<span class="tr" lang="tr">Giriş yap; sınıfın puan tablosunu, puanlarını ve gelişimini gör. Kullanıcı adını ve şifreni hocandan alırsın.</span></p>' +
+        girisKutusu(uyari) + bilgi + '</div>';
+      girisBagla(function () { sinifBen = null; if (suAn()) yukle(); }, girisEkrani, uyari);
+    }
+    function yukle() {
+      govde.innerHTML = '<div class="sinif"><p class="sayac">Laden…<span class="tr" lang="tr"> · Yükleniyor…</span></p></div>';
+      hocaMi = T.hesap().kullanici === 'hoca';
+      (hocaMi ? Promise.resolve(null) : benKimim()).then(function (b) {
+        ben = b;
+        if (!hocaMi && !ben) return yokEkrani();
+        return (hocaMi ? Promise.resolve() : sinifGonder()).then(function () { return sinifVerisi(hocaMi); }).then(function (l) {
+          if (!suAn()) return;
+          veri = l;
+          if (!hocaMi && !veri.some(function (x) { return x.uid === ben.uid; })) veri.push({ uid: ben.uid, ad: ben.ad, haftalar: {}, rozet: 0, rozetler: [] });
+          odak = hocaMi ? odak : ben.uid;
+          ciz();
+        });
+      }).catch(function (e) {
+        if (!suAn()) return;
+        if (e && (e.durum === 401 || e.kod === 'GIRIS_YOK')) return girisEkrani();
+        govde.innerHTML = '<div class="sinif"><p class="uyari">' + baglantiHatasi(e) + '</p><button type="button" class="dugme kucuk yeniden">Opnieuw proberen<small>Tekrar dene</small></button></div>';
+        govde.querySelector('.yeniden').addEventListener('click', yukle);
+      });
+    }
+    function yokEkrani() {
+      govde.innerHTML = '<div class="sinif"><h1>Mijn klas<span class="tr" lang="tr">Sınıfım</span></h1>' +
+        '<p class="uyari">Je account staat nog niet in de klaslijst. Vraag het aan je leraar. <span class="tr" lang="tr">Hesabın henüz sınıf listesinde yok. Hocana söyle.</span></p>' +
+        '<button type="button" class="dugme kucuk cikis">Uitloggen<small>Çıkış</small></button></div>';
+      govde.querySelector('.cikis').addEventListener('click', function () { T.cikis(); sinifBen = null; girisEkrani(); });
+    }
+    function sirala() {
+      return veri.map(function (x) { return { x: x, p: gorunum === 'genel' ? genelPuan(x) : haftaPuani(x.haftalar[secili]) }; })
+        .sort(function (a, b) { return b.p - a.p || a.x.ad.localeCompare(b.x.ad, 'tr'); });
+    }
+    function ciz() {
+      var l = sirala(), h = D.haftalar[secili], sira = 0, onceki = null;
+      var satirlar = l.map(function (o, i) {
+        if (o.p !== onceki) { sira = i + 1; onceki = o.p; }
+        var w = o.x.haftalar[secili] || {}, benMi = !hocaMi && ben && o.x.uid === ben.uid;
+        return '<li class="' + (benMi ? 'ben' : '') + (odak === o.x.uid ? ' odak' : '') + (sira === 1 && o.p > 0 ? ' s1' : '') + '" data-uid="' + esc(o.x.uid) + '">' +
+          '<span class="sira-no">' + sira + '</span><button type="button" class="sinif-ad">' + esc(o.x.ad || '?') + (benMi ? '<small> · jij · sen</small>' : '') + '</button>' +
+          '<span class="rozet-say" title="Badges · Rozetler">' + MADALYA_MINI + o.x.rozet + '</span>' +
+          (hocaMi && gorunum === 'hafta' && h && ezberBlogu(h) ? '<button type="button" class="ezber-onay" aria-pressed="' + (w.ezber ? 'true' : 'false') + '" aria-label="Ezber ' + esc(o.x.ad) + '">Ezber</button>' : '') +
+          '<b class="sinif-puan">' + o.p + '</b></li>';
+      }).join('');
+      govde.innerHTML = '<div class="sinif">' +
+        '<div class="sinif-bas"><h1>Mijn klas<span class="tr" lang="tr">Sınıfım</span></h1>' +
+        '<p class="sinif-selam">' + (hocaMi ? 'Leraar · Hoca' : 'Selam, ' + esc(ben.ad) + '!') + ' <button type="button" class="dugme kucuk cikis">Uitloggen<small>Çıkış</small></button></p></div>' +
+        '<div class="sinif-sekmeler" role="tablist">' +
+        '<button type="button" role="tab" class="sinif-sekme" data-g="hafta" aria-selected="' + (gorunum === 'hafta') + '">Deze week<small>Bu hafta</small></button>' +
+        '<button type="button" role="tab" class="sinif-sekme" data-g="genel" aria-selected="' + (gorunum === 'genel') + '">Alles samen<small>Genel</small></button></div>' +
+        (gorunum === 'hafta' && haftalar.length > 1 ? '<div class="hafta-cipler">' + haftalar.map(function (x) {
+          return '<button type="button" class="hafta-cip" data-h="' + esc(x.id) + '" aria-pressed="' + (x.id === secili) + '">Week ' + esc(x.no) + '<small>' + esc(x.no) + '. hafta</small></button>';
+        }).join('') + '</div>' : '') +
+        (l.length ? '<ol class="sinif-tablo">' + satirlar + '</ol>' : '<p class="sayac">Nog niemand heeft punten. <span class="tr" lang="tr">Henüz kimsenin puanı yok.</span></p>') +
+        (hocaMi ? '<p class="not">Tik op een naam om de groei te zien. Ezber: tik als je de sûre in de les hebt gehoord (+' + PUAN.ezber + ').<span class="tr" lang="tr">Gelişimini görmek için bir isme dokun. Ezber: sûreyi derste dinlediysen dokun (+' + PUAN.ezber + ').</span></p>' : '') +
+        '<div class="gelisim-yer"></div>' +
+        (hocaMi ? hocaAraclari() : '') +
+        puanAciklama() + bilgi + '</div>';
+      gelisimCiz();
+      govde.querySelector('.cikis').addEventListener('click', function () { T.cikis(); sinifBen = null; girisEkrani(); });
+      govde.querySelectorAll('.sinif-sekme').forEach(function (b) { b.addEventListener('click', function () { gorunum = b.dataset.g; ciz(); }); });
+      govde.querySelectorAll('.hafta-cip').forEach(function (b) { b.addEventListener('click', function () { secili = b.dataset.h; ciz(); }); });
+      govde.querySelectorAll('.sinif-ad').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var uid = b.closest('li').dataset.uid;
+          if (!hocaMi && uid !== ben.uid) return;         // çocuk sadece kendi gelişimini açar
+          odak = uid; ciz();
+          var g = govde.querySelector('.gelisim'); if (g) g.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
+      govde.querySelectorAll('.ezber-onay').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var uid = b.closest('li').dataset.uid, x = veri.filter(function (y) { return y.uid === uid; })[0];
+          var w = x.haftalar[secili] || (x.haftalar[secili] = { yildiz: 0, avci: 0, test: 0, zor: 0, ezber: false });
+          var yeni = !w.ezber; b.disabled = true;
+          T.sinif.ezberYaz(secili, uid, x.ad, yeni).then(function () { w.ezber = yeni; if (suAn()) ciz(); }, function (e) { b.disabled = false; alertYaz(baglantiHatasi(e)); });
+        });
+      });
+      if (hocaMi) hocaBagla();
+    }
+    function alertYaz(m) { var u = govde.querySelector('.sinif-uyari'); if (u) u.innerHTML = m; }
+    function puanAciklama() {
+      return '<details class="puan-nasil"><summary>Hoe verdien je punten?<span class="tr" lang="tr"> · Puan nasıl kazanılır?</span></summary><ul>' +
+        '<li>Elke ster in een spel: ' + PUAN.yildiz + '<span class="tr" lang="tr">Oyunlarda her yıldız: ' + PUAN.yildiz + '</span></li>' +
+        '<li>Huiswerk: elk gevonden tecvid-woord ' + PUAN.avci + ', elke goede vraag in de weektest ' + PUAN.test + '<span class="tr" lang="tr">Ödev: tecvid avında her bulduğun ' + PUAN.avci + ', haftanın testinde her doğru ' + PUAN.test + '</span></li>' +
+        '<li>Moeilijke wedstrijd: elke goede vraag ' + PUAN.zor + '<span class="tr" lang="tr">Zor yarış: her doğru ' + PUAN.zor + '</span></li>' +
+        '<li>Ezber, als je hem in de les aan je leraar voorleest: ' + PUAN.ezber + '<span class="tr" lang="tr">Ezber, derste hocana okuyunca: ' + PUAN.ezber + '</span></li>' +
+        '<li>Elke badge (alleen bij “Alles samen”): ' + PUAN.rozet + '<span class="tr" lang="tr">Her rozet (sadece “Genel”de): ' + PUAN.rozet + '</span></li></ul></details>';
+    }
+    function gelisimCiz() {
+      var yer = govde.querySelector('.gelisim-yer'), x = veri.filter(function (y) { return y.uid === odak; })[0];
+      if (!yer || !x) return;
+      var enCok = 1, satir = haftalar.map(function (h) { var p = haftaPuani(x.haftalar[h.id]); enCok = Math.max(enCok, p); return { h: h, p: p }; });
+      var h = D.haftalar[secili], w = (h && x.haftalar[h.id]) || { yildiz: 0, avci: 0, test: 0, zor: 0, ezber: false }, m = h ? haftaEnCok(h) : null;
+      function kalem(ad, deger, en, puan) { return '<tr><th>' + ad + '</th><td>' + deger + (en != null ? ' / ' + en : '') + '</td><td class="p">' + puan + '</td></tr>'; }
+      var kazanilan = ROZETLER.filter(function (r) { return x.rozetler.indexOf(r.id) !== -1; });
+      yer.innerHTML = '<section class="blok gelisim"><h3>' + (hocaMi ? 'Groei van ' + esc(x.ad) : 'Jouw groei') + '<small class="tr" lang="tr">' + (hocaMi ? esc(x.ad) + ' · gelişimi' : 'Gelişimin') + '</small></h3>' +
+        '<ol class="gelisim-cubuklar">' + satir.map(function (s) {
+          return '<li><span class="gc-ad">Week ' + esc(s.h.no) + '</span><span class="gc-yol"><span class="gc-cubuk" style="width:' + Math.round(100 * s.p / enCok) + '%"></span></span><b>' + s.p + '</b></li>';
+        }).join('') + '</ol>' +
+        (h ? '<h4>Week ' + esc(h.no) + '<small class="tr" lang="tr">' + esc(h.no) + '. hafta</small></h4><table class="gelisim-tablo"><tbody>' +
+          kalem('Sterren<small>Yıldızlar</small>', w.yildiz, m.yildiz, w.yildiz * PUAN.yildiz) +
+          (m.avci ? kalem('Tecvid-speurtocht<small>Tecvid avı</small>', w.avci, m.avci, w.avci * PUAN.avci) : '') +
+          (m.test ? kalem('Test van de week<small>Haftanın testi</small>', w.test, m.test, w.test * PUAN.test) : '') +
+          (m.zor ? kalem('Moeilijke wedstrijd<small>Zor yarış</small>', w.zor, m.zor, w.zor * PUAN.zor) : '') +
+          (m.ezber ? kalem('Ezber<small>' + (w.ezber ? 'hoca onayladı' : 'derste hocana oku') + '</small>', w.ezber ? '✓' : '–', null, w.ezber ? PUAN.ezber : 0) : '') +
+          '</tbody><tfoot><tr><th>Totaal<small>Toplam</small></th><td></td><td class="p">' + haftaPuani(w) + '</td></tr></tfoot></table>' : '') +
+        '<h4>Badges · ' + x.rozet + '<small class="tr" lang="tr">Rozetler · ' + x.rozet + '</small></h4>' +
+        (kazanilan.length ? '<div class="gelisim-rozetler">' + kazanilan.map(function (r) { return '<span title="' + esc(rozetAdi(r)) + '">' + madalya(r, true) + '</span>'; }).join('') + '</div>' : '<p class="not">Nog geen badges. <span class="tr" lang="tr">Henüz rozet yok.</span></p>') +
+        '</section>';
+    }
+    function hocaAraclari() {
+      var kayitli = veri.slice().sort(function (a, b) { return a.ad.localeCompare(b.ad, 'tr'); });
+      return '<section class="blok hoca-arac"><h3>Leerling toevoegen<small class="tr" lang="tr">Çocuk ekle</small></h3>' +
+        '<form class="cocuk-form" novalidate autocomplete="off">' +
+        '<label for="c-ad">Voornaam (zichtbaar in de lijst)<span class="tr" lang="tr"> · Ön ad (tabloda görünür)</span></label><input id="c-ad" type="text" maxlength="20">' +
+        '<label for="c-kul">Gebruikersnaam<span class="tr" lang="tr"> · Kullanıcı adı</span></label><input id="c-kul" type="text" maxlength="30" autocapitalize="none" autocorrect="off" spellcheck="false">' +
+        '<label for="c-sifre">Wachtwoord (minstens 6 tekens)<span class="tr" lang="tr"> · Şifre (en az 6 karakter)</span></label><input id="c-sifre" type="text" maxlength="40" autocapitalize="none" autocorrect="off" spellcheck="false">' +
+        '<p class="uyari sinif-uyari" role="alert"></p><button type="submit" class="dugme ana">Toevoegen<small>Ekle</small></button></form><div class="yeni-cocuk" role="status"></div></section>' +
+        '<section class="blok hoca-arac"><h3>Leerlingen · ' + kayitli.length + '<small class="tr" lang="tr">Çocuklar · ' + kayitli.length + '</small></h3>' +
+        (kayitli.length ? '<ul class="cocuk-liste">' + kayitli.map(function (x) {
+          return '<li data-uid="' + esc(x.uid) + '"><span><b>' + esc(x.ad) + '</b><small>' + esc(x.kullanici || '') + '</small></span><button type="button" class="dugme kucuk cocuk-cikar">Verwijderen<small>Listeden çıkar</small></button></li>';
+        }).join('') + '</ul>' : '<p class="not">Nog geen leerlingen. <span class="tr" lang="tr">Henüz çocuk yok.</span></p>') + '</section>';
+    }
+    function hocaBagla() {
+      var form = govde.querySelector('.cocuk-form'), adI = form.querySelector('#c-ad'), kulI = form.querySelector('#c-kul'), sifI = form.querySelector('#c-sifre'), elle = false;
+      var MEYVE = ['elma', 'armut', 'kiraz', 'incir', 'limon', 'erik', 'ayva', 'dut', 'zeytin', 'hurma', 'nar', 'muz'];
+      function sifreUret() { return MEYVE[Math.floor(Math.random() * MEYVE.length)] + (10 + Math.floor(Math.random() * 90)) + MEYVE[Math.floor(Math.random() * MEYVE.length)].charAt(0); }
+      sifI.value = sifreUret();
+      kulI.addEventListener('input', function () { elle = true; });
+      adI.addEventListener('input', function () {
+        if (elle) return;
+        kulI.value = adI.value.toLocaleLowerCase('tr').replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u').replace(/[^a-z0-9]/g, '');
+      });
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var ad = adI.value.trim(), kul = kulI.value.trim().toLowerCase(), sf = sifI.value.trim(), u = form.querySelector('.uyari');
+        if (!ad || !/^[a-z0-9._-]{2,30}$/.test(kul) || sf.length < 6) {
+          u.innerHTML = 'Vul een voornaam, een gebruikersnaam (alleen a-z en cijfers) en een wachtwoord van minstens 6 tekens in. <span class="tr" lang="tr">Ön ad, kullanıcı adı (sadece a-z ve rakam) ve en az 6 karakterlik şifre yaz.</span>'; return;
+        }
+        if (kul === 'hoca') { u.innerHTML = '“hoca” is de naam van het leraaraccount. <span class="tr" lang="tr">“hoca” hoca hesabının adı, başka bir ad seç.</span>'; return; }
+        var d = form.querySelector('button'); d.disabled = true; u.innerHTML = '';
+        T.sinif.cocukEkle(kul, sf, ad).then(function (c) {
+          veri.push({ uid: c.uid, ad: c.ad, kullanici: c.kullanici, listede: true, haftalar: {}, rozet: 0, rozetler: [] });
+          ciz();
+          var y = govde.querySelector('.yeni-cocuk');
+          y.innerHTML = '<div class="geri-bildirim dogru"><b>' + esc(c.ad) + ' is toegevoegd · eklendi</b><p>Gebruikersnaam · Kullanıcı adı: <b>' + esc(c.kullanici) + '</b></p><p>Wachtwoord · Şifre: <b>' + esc(sf) + '</b></p>' +
+            '<p class="tr" lang="tr">Bunu bir kâğıda yazıp çocuğa ver. Şifre bir daha gösterilmez.</p></div>';
+          y.scrollIntoView({ block: 'center' });
+        }, function (x) {
+          d.disabled = false;
+          u.innerHTML = /EMAIL_EXISTS/.test(x.kod) ? 'Deze gebruikersnaam bestaat al. Kies een andere. <span class="tr" lang="tr">Bu kullanıcı adı zaten var, başka bir ad seç.</span>'
+            : /WEAK_PASSWORD/.test(x.kod) ? 'Het wachtwoord is te kort. <span class="tr" lang="tr">Şifre çok kısa.</span>'
+            : /OPERATION_NOT_ALLOWED|ADMIN_ONLY/.test(x.kod) ? 'Nieuwe accounts maken staat uit in Firebase. <span class="tr" lang="tr">Firebase’de yeni hesap açma kapalı (Authentication ayarı).</span>'
+            : baglantiHatasi(x);
+        });
+      });
+      govde.querySelectorAll('.cocuk-cikar').forEach(function (b) {
+        var emin = false;
+        b.addEventListener('click', function () {
+          if (!emin) { emin = true; b.classList.add('emin'); b.innerHTML = 'Zeker? Nog een keer tikken<small>Emin misin? Bir daha dokun</small>'; return; }
+          var uid = b.closest('li').dataset.uid; b.disabled = true;
+          T.sinif.cocukCikar(uid, tabloHaftalari().map(function (h) { return h.id; })).then(function () {
+            veri = veri.filter(function (x) { return x.uid !== uid; }); if (odak === uid) odak = null; if (suAn()) ciz();
+          }, function (e) { b.disabled = false; alertYaz(baglantiHatasi(e)); });
+        });
+      });
+    }
+  }
+  function sinifSeridi() {
+    var hs = window.TABLO && TABLO.hesap();
+    return '<a class="yaris-serit sinif-serit" href="#/sinif"><span>Mijn klas: ranglijst en jouw groei<small class="tr" lang="tr">Sınıfım: puan tablosu ve gelişimin' + (hs ? '' : ' · giriş yap') + '</small></span><span class="ok" aria-hidden="true">›</span></a>';
+  }
+
   var AMBLEM = '<svg class="amblem" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="12" fill="currentColor" opacity=".14"/>' +
     '<path fill="currentColor" d="M9 38v-9.5a10.5 10.5 0 0 1 21 0V38zM33 38V17l2.5-5 2.5 5v21zM6 38h36v2.5H6z"/>' +
     '<path class="hilal" d="M21.4 6.6a4.6 4.6 0 1 0 3.4 7.4 3.7 3.7 0 0 1-3.4-7.4z"/></svg>';
@@ -2196,7 +2484,7 @@ window.DERS = {
       (hatalar.length ? '<div class="hata">' + hatalar.map(esc).join('<br>') + '</div>' : '') +
       '<a class="yaris-serit canli-serit" href="#/canli"><span>Live wedstrijd in de les<small class="tr" lang="tr">Derste canlı yarış</small></span><span class="ok" aria-hidden="true">›</span></a>' +
       (D.tecvid ? '<a class="yaris-serit tecvid-serit" href="#/tecvid"><span>Tecvid: alle regels op één plek<small class="tr" lang="tr">Tecvid: bütün kurallar tek yerde</small></span><span class="ok" aria-hidden="true">›</span></a>' : '') +
-      rozetSeridi() +
+      rozetSeridi() + sinifSeridi() +
       kartlar + '</div>';
   }
 
@@ -2337,6 +2625,7 @@ window.DERS = {
     }
     else if (p[1] === 'canli') { acik = null; kalemGoster(false); canliSayfasi(); }
     else if (p[1] === 'rozetler') { acik = null; kalemGoster(false); rozetSayfasi(); }
+    else if (p[1] === 'sinif') { acik = null; kalemGoster(false); sinifSayfasi(); }
     else if (!h) { acik = null; kalemGoster(false); anaSayfa(); }
     else if (kilitli(h)) { acik = null; kalemGoster(false); haftaKilidi(h); }
     else if (p[2] === 'yaris') { acik = null; kalemGoster(false); yarisSayfasi(h); }
@@ -2373,6 +2662,7 @@ window.DERS = {
       });
       yonlendir();
       rozetKontrol();               // daha önce kazanılmış ama henüz verilmemiş rozetler
+      sinifGonderSonra();           // giriş yapılmışsa bu cihazdaki ilerleme sınıf tablosuna
     });
   });
 })();
