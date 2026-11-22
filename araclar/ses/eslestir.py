@@ -1,7 +1,7 @@
 # Her tecvid kelimesini âyetteki kelime sırasıyla eşleştirir; Hüsarî (muallim) zamanlarını bulur.
 import json, re, unicodedata, urllib.request, os, sys, time
-SURE = {'Fâtiha': 1, 'Bakara': 2, 'Nisâ': 4, 'Hûd': 11, 'Kehf': 18, 'Yâsîn': 36, 'Zâriyât': 51, 'Hâkka': 69, 'Nâziât': 79, 'Abese': 80,
-        'Kevser': 108, 'Nasr': 110, 'Tebbet': 111, 'İhlâs': 112, 'Felak': 113, 'Nâs': 114}
+SURE = {'Fâtiha': 1, 'Bakara': 2, 'Nisâ': 4, 'Hûd': 11, 'Kehf': 18, 'Yâsîn': 36, 'Fetih': 48, 'Zâriyât': 51, 'Hâkka': 69, 'Nâziât': 79, 'Abese': 80,
+        'Kureyş': 106, 'Kevser': 108, 'Nasr': 110, 'Tebbet': 111, 'İhlâs': 112, 'Felak': 113, 'Nâs': 114}
 def iskelet(s):
     s = unicodedata.normalize('NFD', re.sub(r'[()\[\]{}\u200d]', '', s))
     s = ''.join(ch for ch in s if unicodedata.category(ch) == 'Lo')

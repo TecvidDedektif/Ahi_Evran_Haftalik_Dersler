@@ -426,6 +426,7 @@ window.DERS = {
     munfasil: { ad: 'Munfasıl', ipucu: { nl: 'Twee hokjes', tr: 'İki kutu' }, neden: { nl: 'Med-letter aan het einde, hemze in het volgende woord: Munfasıl, 4 tellen.', tr: 'Med harfi kelime sonunda, hemze sonraki kelimede: Munfasıl, 4 hareke.' }, kopru: true },
     ariz: { ad: 'Ârız', ipucu: { nl: 'Stoppen aan het eind', tr: 'Durakta (vakıf)' }, neden: { nl: 'Na de med-letter komt de laatste letter. Stop je daar, dan wordt die letter sakin: Medd-i ‘Ârız. Je mag 2, 4 of 6 tellen rekken; in de les rekken we 4. Lees je door zonder te stoppen, dan is het een gewone Tabiî.', tr: 'Med harfinden sonra son harf gelir. Orada durunca o harf sakin olur: Medd-i Ârız. 2, 4 ya da 6 hareke uzatılabilir; derste 4 hareke uzatıyoruz. Durmadan devam edersen normal tabiî med gibi okunur.' } },
     lazim: { ad: 'Lâzım', ipucu: { nl: 'Şedde of sukûn', tr: 'Şedde ya da sükûn' }, neden: { nl: 'Na de med-letter komt een şedde of sukûn: Lâzım, 6 tellen.', tr: 'Med harfinden sonra şedde ya da sükûn: Lâzım, 6 hareke.' } },
+    lin: { ad: 'Lîn', ipucu: { nl: 'Zachte letter + stop', tr: 'Lîn harfi + durak' }, neden: { nl: 'Een sakin vav of ye na een üstün is een zachte letter (lîn). Stop je op de letter erna, dan wordt die sakin: Medd-i Lîn. Je mag 2, 4 of 6 tellen rekken. Lees je door zonder te stoppen, dan rek je niet.', tr: 'Üstünden sonra gelen sakin vav ya da ye lîn harfidir. Ondan sonraki harfte durunca o harf sakin olur: Medd-i Lîn. 2, 4 ya da 6 hareke uzatılabilir. Durmadan devam edersen uzatılmaz.' } },
   };
   function meddDugmeleri(secenekler) {
     return '<div class="secenekler uc">' + secenekler.map(function (t) {
@@ -1255,7 +1256,9 @@ window.DERS = {
       aciklama: aciklama ? { nl: nl(aciklama), tr: tr(aciklama) } : null };
   }
   function canliMedd(s) {
-    var w = s.medd, t = s.secenekler.slice(0, 4);
+    // Canlı yarışta en çok 4 seçenek: doğru tür her zaman kalır, fazlası rastgele çıkar
+    var w = s.medd, t = s.secenekler.slice();
+    while (t.length > 4) { var i = Math.floor(Math.random() * t.length); if (t[i] !== w.tur) t.splice(i, 1); }
     return { konu: { nl: nl(s.konu.kisa), tr: tr(s.konu.kisa), renk: s.konu.renk }, soru: { nl: 'Welke medd zie je?', tr: 'Hangi med?' },
       ar: w.yazi, kaynak: w.kaynak || '', tur: w.tur,
       secenekler: t.map(function (x) { return { nl: MEDD[x].ad, tr: '' }; }), dogru: t.indexOf(w.tur),
@@ -2553,7 +2556,7 @@ window.DERS = {
         });
       });
     });
-    var sira = ['tabii', 'muttasil', 'munfasil', 'lazim', 'ariz'];
+    var sira = ['tabii', 'muttasil', 'munfasil', 'lazim', 'ariz', 'lin'];
     turler.sort(function (a, b) { return sira.indexOf(a) - sira.indexOf(b); });
     return { tur: 'medd', baslik: { nl: 'Gemengde herhaling: welke medd?', tr: 'Karışık tekrar: hangi med?' }, secenekler: turler, kelimeler: kelimeler, adet: turler.length * 3 };
   }

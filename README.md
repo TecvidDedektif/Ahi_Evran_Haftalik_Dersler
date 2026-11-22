@@ -23,7 +23,7 @@ Adres (Pages açıldıktan sonra): https://tecviddedektif.github.io/Ahi_Evran_Ha
   - **Hoca** aynı sayfaya "hoca" hesabıyla girer: bütün çocuklar, bir isme dokununca o çocuğun gelişimi, her satırda **Ezber** düğmesi (sûreyi derste dinleyince dokunur, +50), **Çocuk ekle** (ön ad, kullanıcı adı, şifre; site önerir, şifre bir kere gösterilir, kâğıda yazıp çocuğa verilir) ve **Listeden çıkar** (iki dokunuş; çocuğun bütün satırları silinir, giriş hesabı Firebase panelinden silinir).
 - **Mini quiz:** her quizin 10 soruluk havuzu var, her açılışta 6'sı karışık gelir; her soruda 4 seçenek. Cevaplanan soruya "Geri" ile dönülür: verilen cevap ve açıklama görünür ama değiştirilemez. Sonuç ekranında "Cevaplara bak".
 - **Latin okunuş yok:** âyetler ve tecvid kelimeleri sadece Arapçası ve anlamıyla gösterilir; çocuk okumayı Arapçadan yapsın diye. Okunuşu duymak için "Dinle" düğmesi var (kelimelerde ve ezber sûresinin her âyetinde). Bir soru bir âyeti ya da kelimeyi soruyorsa Arapçası sorunun üstünde görünür (`ar` alanı). Hafta dosyalarındaki `okunus` alanları sadece bilgi için durur, ekranda gösterilmez.
-- **Ödevler** (`#/hafta-N/odev`): her haftanın sayfasında "Bu haftanın ödevleri" şeridi, ana sayfadaki kartta "Huiswerk · Ödev 1/4" düğmesi. Dört parça: ezber (sûreyi âyet âyet dinleyip ezberle, "Ezberledim"), tecvid avı (âyette kurala uyan kelimeleri bul), haftanın testi (haftanın bütün mini quizlerinden 10 soru, en az 7 doğru) ve hayatta uygula (10. hafta 7 günlük namaz çizelgesi, 11. hafta cesaret ve abdest görevlerinden en az ikisi). Teslim: bir sonraki ders. Her şey sadece çocuğun cihazında kalır; hoca kimin yaptığını siteden görmez, çocuk derste telefonundan gösterir. Bir haftanın bütün ödevini bitirene "Ödev tamam" rozeti.
+- **Ödevler** (`#/hafta-N/odev`): her haftanın sayfasında "Bu haftanın ödevleri" şeridi, ana sayfadaki kartta "Huiswerk · Ödev 1/4" düğmesi. Dört parça: ezber (sûreyi âyet âyet dinleyip ezberle, "Ezberledim"), tecvid avı (âyette kurala uyan kelimeleri bul), haftanın testi (haftanın bütün mini quizlerinden 10 soru, en az 7 doğru) ve hayatta uygula (10. hafta 7 günlük namaz çizelgesi, 11. hafta cesaret ve abdest görevlerinden, 12. hafta tevazu ve oruç görevlerinden en az ikisi). Teslim: bir sonraki ders. Her şey sadece çocuğun cihazında kalır; hoca kimin yaptığını siteden görmez, çocuk derste telefonundan gösterir. Bir haftanın bütün ödevini bitirene "Ödev tamam" rozeti.
 
 ## Gizlilik
 
@@ -196,7 +196,7 @@ Cevapların doğrusu yanlışı yoktur, hangisi seçilirse seçilsin hikâye dev
 
 Örnek: `'نَشَ(آ)[ءُ]'` tek kutu (muttasıl), `'يَٰبَنِ(ىٓ) [ءَ]ادَمَ'` iki kutu (munfasıl).
 
-Med harfi oyunu için `elif`, `vav`, `ye` türleri de var. Med türleri (`tur`): `tabii` 2 hareke, `muttasil` 4, `munfasil` 4, `lazim` 6, `ariz` (durakta; 2, 4 ya da 6, derste 4). `ariz` kelimelerinde durakta sakin olan son harf `{ }` ile işaretlenir: `'يَشْكُرُ(و){نَ}'`.
+Med harfi oyunu için `elif`, `vav`, `ye` türleri de var. Med türleri (`tur`): `tabii` 2 hareke, `muttasil` 4, `munfasil` 4, `lazim` 6, `ariz` (durakta; 2, 4 ya da 6, derste 4). `ariz` kelimelerinde durakta sakin olan son harf `{ }` ile işaretlenir: `'يَشْكُرُ(و){نَ}'`. `lin` (Medd-i Lîn: üstünden sonra sakin vav ya da ye, durakta; 2, 4 ya da 6): lîn harfi `( )`, durakta sakin olan harf `{ }` içinde: `'قُرَ(يْ){شٍ}'`. Canlı yarışta bir med sorusunda en çok 4 seçenek çıkar; oyunda 5 tür varsa doğru tür kalır, biri rastgele çıkarılır.
 
 Arapça metni elle yazma; mushaftan ya da güvenilir bir Kur'an sitesinden kopyala.
 
