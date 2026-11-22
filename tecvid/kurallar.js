@@ -13,7 +13,7 @@
    orada doğrulanmıştı. Bu dosya build/make_tecvid.py ile üretildi.
 
    Arapça kelimede işaretler:
-     ( )  med harfi  mavi      [ ]  hemze  kırmızı      { }  sükûn, şedde  mor
+     ( )  med harfi, lîn harfi  mavi      [ ]  hemze  kırmızı      { }  sükûn, şedde  mor
    ============================================================ */
 
 DERS.tecvidEkle({
@@ -409,6 +409,72 @@ DERS.tecvidEkle({
             { soru: { nl: 'Wat is het verschil tussen Lâzım en ‘Ârız?', tr: 'Lâzım ile ârız arasındaki fark nedir?' },
               secenekler: [{ nl: 'Bij Lâzım is de sukûn er altijd, bij ‘Ârız alleen als je stopt', tr: 'Lâzımda sükûn hep var, ârızda sadece durunca' }, { nl: '‘Ârız is altijd 6 tellen', tr: 'Ârız hep 6 hareke' }, { nl: 'Er is geen verschil', tr: 'Fark yoktur' }],
               dogru: 0 },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'lin',
+      hafta: 12,
+      ad: { nl: 'Medd-i Lîn', tr: 'Medd-i Lîn' },
+      kisa: { nl: 'Lîn', tr: 'Lîn' },
+      bloklar: [
+        {
+          tur: 'ozet',
+          baslik: { nl: 'Een zachte letter en een stop', tr: 'Lîn harfi ve durak' },
+          maddeler: [
+            { simge: '🪶', nl: '“Lîn” betekent zacht. Een sakin vav (وْ) of sakin ye (يْ) met een üstün op de letter ervoor heet een zachte letter: harf-i lîn.', tr: '“Lîn” yumuşak demektir. Kendinden önceki harf üstünlü olan sakin vav (وْ) ya da sakin ye (يْ) lîn harfidir.' },
+            { simge: '🛑', nl: 'Stop je op de letter na de zachte letter, dan wordt die letter sakin. Dan mag je de zachte letter rekken: Medd-i Lîn.', tr: 'Lîn harfinden sonraki harfte durursan o harf sakin olur. O zaman lîn harfi uzatılabilir: Medd-i Lîn.' },
+            { simge: '📏', nl: 'Je mag 2, 4 of 6 tellen rekken.', tr: '2, 4 ya da 6 hareke uzatılabilir.' },
+            { simge: '▶️', nl: 'Lees je door zonder te stoppen? Dan rek je niet: de zachte letter blijft kort.', tr: 'Durmadan devam edersen uzatılmaz, lîn harfi kısa okunur.' },
+            { simge: '🆚', nl: 'Verschil met ‘Ârız: bij ‘Ârız staat er een med-letter (elif na üstün, vav na ötre, ye na esre). Bij Lîn een sakin vav of ye na een üstün.', tr: 'Ârızdan farkı: ârızda med harfi vardır (üstünden sonra elif, ötreden sonra vav, esreden sonra ye). Lînde ise üstünden sonra sakin vav ya da ye.' },
+          ],
+        },
+        {
+          tur: 'ornekler',
+          kelimeler: [
+            { tur: 'lin', yazi: 'قُرَ(يْ){شٍ}', okunus: 'kureyş', nl: 'de Kureyş', tr: 'Kureyş', kaynak: 'Kureyş 1' },
+            { tur: 'lin', yazi: 'وَالصَّ(يْ){فِ}', okunus: 'ves-sayf', nl: 'en de zomer', tr: 've yaz', kaynak: 'Kureyş 2' },
+            { tur: 'lin', yazi: 'الْبَ(يْ){تِ}', okunus: 'el-beyt', nl: 'het Huis (de Kaaba)', tr: 'Ev (Kâbe)', kaynak: 'Kureyş 3' },
+            { tur: 'lin', yazi: 'خَ(وْ){فِۭ}', okunus: 'havf', nl: 'angst', tr: 'korku', kaynak: 'Kureyş 4' },
+            { tur: 'lin', yazi: 'السَّ(وْ){ءِ}', okunus: 'es-sev’', nl: 'het slechte', tr: 'kötülük', kaynak: 'Fetih 6' },
+            { tur: 'lin', yazi: 'رَ(يْ){بَ}', okunus: 'rayb', nl: 'twijfel', tr: 'şüphe', kaynak: 'Bakara 2' },
+          ],
+        },
+        {
+          tur: 'medd',
+          baslik: { nl: 'Tabiî, ‘Ârız of Lîn?', tr: 'Tabiî mi, ârız mı, lîn mi?' },
+          secenekler: ['tabii', 'ariz', 'lin'],
+          adet: 12,
+          kelimeler: [
+            { tur: 'lin', yazi: 'قُرَ(يْ){شٍ}', okunus: 'kureyş', nl: 'de Kureyş', tr: 'Kureyş', kaynak: 'Kureyş 1' },
+            { tur: 'lin', yazi: 'وَالصَّ(يْ){فِ}', okunus: 'ves-sayf', nl: 'en de zomer', tr: 've yaz', kaynak: 'Kureyş 2' },
+            { tur: 'lin', yazi: 'الْبَ(يْ){تِ}', okunus: 'el-beyt', nl: 'het Huis (de Kaaba)', tr: 'Ev (Kâbe)', kaynak: 'Kureyş 3' },
+            { tur: 'lin', yazi: 'خَ(وْ){فِۭ}', okunus: 'havf', nl: 'angst', tr: 'korku', kaynak: 'Kureyş 4' },
+            { tur: 'lin', yazi: 'السَّ(وْ){ءِ}', okunus: 'es-sev’', nl: 'het slechte', tr: 'kötülük', kaynak: 'Fetih 6' },
+            { tur: 'lin', yazi: 'رَ(يْ){بَ}', okunus: 'rayb', nl: 'twijfel', tr: 'şüphe', kaynak: 'Bakara 2' },
+            { tur: 'ariz', yazi: 'يُنصَرُ(و){نَ}', okunus: 'yunsarûn', nl: 'zij worden geholpen', tr: 'yardım görürler', kaynak: 'Yâsîn 74' },
+            { tur: 'ariz', yazi: 'يَأْكُلُ(و){نَ}', okunus: 'ye’külûn', nl: 'zij eten', tr: 'yerler', kaynak: 'Yâsîn 72' },
+            { tur: 'ariz', yazi: 'عَلِ(ي){مٌ}', okunus: 'alîm', nl: 'Alwetend', tr: 'her şeyi bilen', kaynak: 'Yâsîn 79' },
+            { tur: 'ariz', yazi: 'تُرْجَعُ(و){نَ}', okunus: 'turce’ûn', nl: 'jullie keren terug', tr: 'döndürüleceksiniz', kaynak: 'Yâsîn 83' },
+            { tur: 'tabii', yazi: 'مَشَ(ا)رِبُ', okunus: 'meşâribu', nl: 'dranken', tr: 'içecekler', kaynak: 'Yâsîn 73' },
+            { tur: 'tabii', yazi: 'نَ(ا)رًا', okunus: 'nâran', nl: 'vuur', tr: 'ateş', kaynak: 'Yâsîn 80' },
+            { tur: 'tabii', yazi: 'السَّكِ(ي)نَةَ', okunus: 'es-sekîne', nl: 'rust en vertrouwen (sekîne)', tr: 'huzur ve güven (sekîne)', kaynak: 'Fetih 4' },
+            { tur: 'tabii', yazi: 'جُنُ(و)دُ', okunus: 'cünûdu', nl: 'legers', tr: 'ordular', kaynak: 'Fetih 4' },
+          ],
+        },
+        {
+          tur: 'quiz',
+          sorular: [
+            { soru: { nl: 'Wat is een lîn-letter (zachte letter)?', tr: 'Lîn harfi nedir?' },
+              secenekler: [{ nl: 'Een sakin vav of ye met een üstün op de letter ervoor', tr: 'Kendinden önceki harf üstünlü olan sakin vav ya da ye' }, { nl: 'Een elif na een üstün', tr: 'Üstünden sonra gelen elif' }, { nl: 'Een vav met şedde', tr: 'Şeddeli vav' }],
+              dogru: 0 },
+            { soru: { nl: 'Je leest dit woord door zonder te stoppen. Hoe lees je de ye?', tr: 'Bu kelimede durmadan devam ediyorsun. Ye’yi nasıl okursun?' }, ar: 'قُرَيْشٍ',
+              secenekler: [{ nl: 'Kort, zonder te rekken', tr: 'Kısa, uzatmadan' }, { nl: '6 tellen', tr: '6 hareke' }, { nl: '4 tellen', tr: '4 hareke' }],
+              dogru: 0, aciklama: { nl: 'Alleen als je stopt, mag je de zachte letter rekken.', tr: 'Lîn harfi sadece durunca uzatılabilir.' } },
+            { soru: { nl: 'Wat is het verschil tussen Lîn en ‘Ârız?', tr: 'Lîn ile ârız arasındaki fark nedir?' },
+              secenekler: [{ nl: 'Bij Lîn een sakin vav of ye na üstün, bij ‘Ârız een med-letter', tr: 'Lînde üstünden sonra sakin vav ya da ye, ârızda med harfi' }, { nl: 'Lîn is altijd 6 tellen', tr: 'Lîn hep 6 hareke' }, { nl: 'Bij Lîn hoef je nooit te stoppen', tr: 'Lînde hiç durulmaz' }],
+              dogru: 0, aciklama: { nl: 'Bij allebei ontstaat de medd door het stoppen.', tr: 'İkisinde de med durmakla ortaya çıkar.' } },
           ],
         },
       ],

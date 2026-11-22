@@ -50,3 +50,6 @@ Muallim kıraatinde her âyetten sonra uzun bir durak olduğu için kesim temizd
 1. Sûrenin sesini ve âyet zamanlarını indir (yukarıdaki 2. adım: `mp3/<no>.mp3`, `zaman_<no>.json`).
 2. `python3 ayet_kes.py 112 111` → `ayet/*.mp3`. Bunları `ses/ayet/` klasörüne kopyala.
 3. Hafta dosyasında ezber âyetine `ses: '112-1'` ekle.
+
+Âyetin ortasında bir durak varsa (Hüsarî durup nefes alır) `ayet_kes.py` sadece ilk parçayı alır. Böyle âyetlerde
+iki parça ayrı kesilip araya 0,7 sn sessizlik konarak birleştirildi (2026-11: 110:3, "vestağfirh"ten sonra).

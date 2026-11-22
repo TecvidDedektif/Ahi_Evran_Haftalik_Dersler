@@ -7,4 +7,5 @@
 DERS.liste([
   'hafta-10',
   'hafta-11',
+  'hafta-12',
 ]);
