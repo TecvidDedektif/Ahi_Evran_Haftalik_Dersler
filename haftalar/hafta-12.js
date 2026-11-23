@@ -93,7 +93,7 @@ DERS.haftaEkle({
             { simge: '🙂', nl: 'Per vergissing (vergeten) eten of drinken verbreekt het vasten niet. Maak je vasten gewoon af: “Allah heeft je te eten en te drinken gegeven.”', tr: 'Unutarak yemek ya da içmek orucu bozmaz. Orucunu tamamla: “Onu Allah yedirmiş, içirmiştir.”', kaynak: 'Buhârî, Müslim' },
             { simge: '🚿', nl: 'Ook niet: douchen of zwemmen zonder water in te slikken, tanden poetsen zonder tandpasta in te slikken, vanzelf overgeven, oogdruppels, bloed geven.', tr: 'Bunlar da bozmaz: su yutmadan yıkanmak ya da yüzmek, macunu yutmadan diş fırçalamak, kendiliğinden kusmak, göz damlası, kan vermek.' },
             { simge: '💧', nl: 'Wél verbroken, later één dag inhalen (kaza): je weet dat je vast en bij de wudû glijdt er per ongeluk water naar binnen; of je geeft expres een mondvol over.', tr: 'Bozar, sonra bir gün kaza edilir: oruçlu olduğunu bilirken abdestte yanlışlıkla boğaza su kaçması ya da kasten ağız dolusu kusmak.' },
-            { simge: '⚠️', nl: 'In de ramadan expres eten of drinken zonder geldige reden: inhalen én als boete 60 dagen achter elkaar vasten (kefaret).', tr: 'Ramazan’da özürsüz, bile bile yiyip içmek: hem kaza hem de keffaret (60 gün peş peşe oruç) gerekir.' },
+            { simge: '⚠️', nl: 'Je bent in de ramadan begonnen met vasten (niyet vóór de imsak) en je breekt het zonder geldige reden expres door te eten of te drinken: inhalen én als boete 60 dagen achter elkaar vasten (kefaret). Wie die dag helemaal niet vast, doet een grote zonde, maar haalt alleen in (kaza) en vraagt Allah om vergeving. Kefaret is de straf voor het breken van een begonnen vasten.', tr: 'Ramazan’da imsaktan önce niyet edip oruca başladıktan sonra özürsüz, bile bile yiyip içerek orucu bozmak: hem kaza hem de keffaret (60 gün peş peşe oruç) gerekir. O gün oruca hiç başlamamak büyük günahtır ama sadece kaza ve tövbe gerekir. Keffaret, başlanmış orucu bozmanın cezasıdır.' },
             { simge: '🎉', nl: 'Op de dagen van de twee bayrams vast je niet.', tr: 'İki bayram günlerinde oruç tutulmaz.', kaynak: 'Buhârî, Müslim' },
           ],
         },
@@ -487,12 +487,12 @@ DERS.haftaEkle({
     { konu: 'oruc',
       soru: { nl: 'Wat is kefaret van het vasten?', tr: 'Orucun keffareti nedir?' },
       secenekler: [
-        { nl: '60 dagen achter elkaar vasten, bij expres breken in de ramadan zonder reden', tr: 'Ramazan orucu özürsüz, bile bile bozulursa 60 gün peş peşe oruç tutmak' },
+        { nl: '60 dagen achter elkaar vasten, als je een begonnen ramadanvasten zonder reden expres breekt', tr: 'Ramazan orucuna başlayıp özürsüz, bile bile bozana 60 gün peş peşe oruç' },
         { nl: 'Eén dag inhalen', tr: 'Bir gün kaza etmek' },
         { nl: 'Drie dagen extra bidden', tr: 'Üç gün fazladan namaz kılmak' },
         { nl: 'Eén maaltijd aan een arme geven', tr: 'Bir fakire bir öğün yemek vermek' },
       ],
-      dogru: 0 },
+      dogru: 0, aciklama: { nl: 'Wie die dag helemaal niet begint te vasten, doet een grote zonde, maar haalt alleen in (kaza): kefaret is de straf voor het breken van een begonnen vasten.', tr: 'O gün oruca hiç başlamayan büyük günah işler ama sadece kaza eder: keffaret, başlanmış orucu bozmanın cezasıdır.' } },
     { konu: 'oruc',
       soru: { nl: 'Welke van deze verbreekt het vasten?', tr: 'Hangisi orucu bozar?' },
       secenekler: [
