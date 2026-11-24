@@ -22,7 +22,7 @@
 //   - Tabloyu sadece giriş yapmış, listedeki çocuklar ve hoca görür.
 //   - Çocuk sadece kendi satırını, listedeki kendi ismiyle yazar. Puanlar sadece artabilir
 //     ve sınırlıdır (bir haftada en çok 60 yıldız, 20 tecvid avı, 10 test sorusu; en çok 40 rozet).
-//   - Ezber onayını sadece hoca verir.
+//   - Ezber onayını sadece hoca verir (ezberler/<uid>: ezber karnesi, hocanın derste dinlediği dualar ve sûreler).
 //   - Silmeyi hoca yapar ("Listeden çıkar").
 
 rules_version = '2';
@@ -83,6 +83,17 @@ service cloud.firestore {
       allow create, update: if hoca()
         && request.resource.data.keys().hasOnly(['ad', 'tamam'])
         && request.resource.data.tamam == true;
+      allow delete: if hoca();
+    }
+
+    // ezberler/<uid>: ezber karnesi. Hoca derste dinleyip onaylar; sınıf görür (sadece liste ve ön ad).
+    match /ezberler/{uid} {
+      allow get, list: if girisli();
+      allow create, update: if hoca()
+        && request.resource.data.keys().hasOnly(['ad', 'liste', 'son'])
+        && request.resource.data.ad is string && request.resource.data.ad.size() >= 1 && request.resource.data.ad.size() <= 20
+        && request.resource.data.liste is list && request.resource.data.liste.size() <= 60
+        && request.resource.data.son == request.time;
       allow delete: if hoca();
     }
 

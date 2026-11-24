@@ -27,7 +27,8 @@
    Sınıf tablosu ve gelişim (sadece giriş yapan çocuklar ve hoca okur):
      ogrenciler/<uid>                 { ad, kullanici }   hoca sitedeki "Çocuk ekle" ile açar
      haftalar/<hafta>/ilerleme/<uid>  { ad, yildiz, avci, test, son }   çocuk yazar, sadece artar
-     haftalar/<hafta>/ezber/<uid>     { ad, tamam }   hoca derste dinleyip onaylar
+     haftalar/<hafta>/ezber/<uid>     { ad, tamam }   eski haftalık ezber onayı (hâlâ okunur; yenisi ezberler/<uid>)
+    ezberler/<uid>                   { ad, liste, son }   ezber karnesi: hocanın derste dinleyip onayladığı dualar ve sûreler
      rozetler/<uid>                   { ad, sayi, liste, son }   çocuğun rozetleri
      Namaz çizelgesi ve "Ezberledim" gönderilmez; sadece çocuğun cihazında kalır.
 
@@ -303,10 +304,11 @@ window.TABLO = (function () {
     // Çocuk: kendi haftalık ilerlemesi ve rozetleri (sunucu saatiyle)
     ilerlemeYaz: function (hafta, uid, o) { return yazilar([guncelleme('haftalar/' + hafta + '/ilerleme/' + uid, o, null, ['son'])], true); },
     rozetYaz: function (uid, o) { return yazilar([guncelleme('rozetler/' + uid, o, null, ['son'])], true); },
-    // Hoca: ezber onayı (tamam=false onayı kaldırır)
-    ezberYaz: function (hafta, uid, ad, tamam) {
-      var yol = 'haftalar/' + hafta + '/ezber/' + uid;
-      return yazilar([tamam ? guncelleme(yol, { ad: ad, tamam: true }) : { delete: veriYolu() + '/' + yol }], true);
+    // Hoca: ezber karnesi onayları (bütün liste yazılır). eskiHafta: onay kalkınca o haftanın eski onayı da silinir.
+    ezberlerYaz: function (uid, ad, liste, eskiHafta) {
+      var w = [guncelleme('ezberler/' + uid, { ad: ad, liste: liste }, null, ['son'])];
+      if (eskiHafta) w.push({ delete: veriYolu() + '/haftalar/' + eskiHafta + '/ezber/' + uid });
+      return yazilar(w, true);
     },
     // Hoca: yeni çocuk hesabı. Hesap açılır (hocanın oturumu değişmez), sonra listeye yazılır.
     cocukEkle: function (kullanici, sifre, ad) {
@@ -321,7 +323,7 @@ window.TABLO = (function () {
     },
     // Hoca: çocuğu listeden çıkarır, tablodaki bütün satırlarını siler (giriş hesabı Firebase panelinden silinir)
     cocukCikar: function (uid, haftalar) {
-      var w = [{ delete: veriYolu() + '/ogrenciler/' + uid }, { delete: veriYolu() + '/rozetler/' + uid }];
+      var w = [{ delete: veriYolu() + '/ogrenciler/' + uid }, { delete: veriYolu() + '/rozetler/' + uid }, { delete: veriYolu() + '/ezberler/' + uid }];
       (haftalar || []).forEach(function (h) {
         w.push({ delete: veriYolu() + '/haftalar/' + h + '/ilerleme/' + uid });
         w.push({ delete: veriYolu() + '/haftalar/' + h + '/ezber/' + uid });

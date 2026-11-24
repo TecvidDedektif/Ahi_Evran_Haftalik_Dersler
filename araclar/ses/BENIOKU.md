@@ -52,4 +52,4 @@ Muallim kıraatinde her âyetten sonra uzun bir durak olduğu için kesim temizd
 3. Hafta dosyasında ezber âyetine `ses: '112-1'` ekle.
 
 Âyetin ortasında bir durak varsa (Hüsarî durup nefes alır) `ayet_kes.py` sadece ilk parçayı alır. Böyle âyetlerde
-iki parça ayrı kesilip araya 0,7 sn sessizlik konarak birleştirildi (2026-11: 110:3, "vestağfirh"ten sonra).
+iki parça ayrı kesilip araya 0,7 sn sessizlik konarak birleştirildi (2026-11: 110:3, "vestağfirh"ten sonra; 1:7, "aleyhim"den sonra). 114:6'da Hüsarî son âyeti tekrar ediyor; sadece ilk okuyuş alındı.
