@@ -47,6 +47,7 @@
      dersler-rozet    rozetler ve onlar için sayılanlar (okunan hikâyeler, yarışlar, haftalar)
      dersler-odev     ödevler: ezberledim, bulunan tecvid kelimeleri, test puanı, namaz çizelgesi, görevler
      dersler-gonderildi  sınıf tablosuna en son gönderilen yıldız, ödev ve rozet sayıları (tekrar göndermemek için)
+     dersler-ezber    ezber karnesi: "Ezberledim", "Namazda okudum", haftanın tekrarı, son görülen hoca onayları
    ============================================================ */
 
 window.DERS = {
@@ -56,6 +57,8 @@ window.DERS = {
   liste: function (l) { this.sira = l; },
   tecvid: null,
   tecvidEkle: function (t) { this.tecvid = t; },
+  ezberPlan: null,
+  ezberPlani: function (p) { this.ezberPlan = p; },
 };
 
 (function () {
@@ -327,7 +330,7 @@ window.DERS = {
 
   // ---------- Ezber: âyetler + sıraya dizme ----------
   BLOK.ezber = function (b, yer) {
-    return '<section class="blok ezber"><h3>' + ikiSatir(b.baslik) + '</h3>' +
+    return '<section class="blok ezber"><h3>' + ikiSatir(b.baslik) + '</h3>' + yardimciCiz() +
       '<ol class="ayetler">' + b.ayetler.map(function (a) {
         return '<li><p class="ar ayet" lang="ar">' + kw(a.ar) + '</p>' + (a.ses ? sesDugmesi('ayet/' + a.ses, 'ayet-dinle') : '') + ikiI(a) + '</li>';
       }).join('') + '</ol></section>' +
@@ -1782,11 +1785,17 @@ window.DERS = {
   // =========================================================
   var rozet = oku('dersler-rozet', {});
   ['k', 'sohbet', 'zor', 'canli', 'haftalar'].forEach(function (a) { if (!rozet[a] || typeof rozet[a] !== 'object') rozet[a] = {}; });
-  var ROZET_RENK = { ogrenme: 'var(--ibadet)', tecvid: 'var(--kuran)', yaris: 'var(--siyer)', devam: 'var(--ezber)', bronz: '#b9733a', gumus: '#8b98aa', altin: '#e2a500' };
+  // Ezber karnesi (bu cihazda): ez = Ezberledim, namaz = Namazda okudum, tekrar = { takvim haftası: ezber }, onay = son görülen hoca onayları
+  var ezberYerel = oku('dersler-ezber', {});
+  if (!ezberYerel || typeof ezberYerel !== 'object') ezberYerel = {};
+  ['ez', 'namaz', 'tekrar'].forEach(function (a) { if (!ezberYerel[a] || typeof ezberYerel[a] !== 'object') ezberYerel[a] = {}; });
+  if (!Array.isArray(ezberYerel.onay)) ezberYerel.onay = [];
+  var ROZET_RENK = { ogrenme: 'var(--ibadet)', tecvid: 'var(--kuran)', yaris: 'var(--siyer)', devam: 'var(--ezber)', hafiz: '#0e8f86', bronz: '#b9733a', gumus: '#8b98aa', altin: '#e2a500' };
   var ROZET_GRUP = [
     { id: 'ogrenme', nl: 'Leren', tr: 'Öğrenme' },
     { id: 'tecvid', nl: 'Tecvid', tr: 'Tecvid' },
     { id: 'yaris', nl: 'Wedstrijden', tr: 'Yarışlar' },
+    { id: 'hafiz', nl: 'Uit het hoofd', tr: 'Ezber' },
     { id: 'devam', nl: 'Volhouden', tr: 'Devamlılık' },
   ];
   // Simgeler 24x24, çizgi olarak çizilir
@@ -1810,6 +1819,11 @@ window.DERS = {
     defter: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.5 7.5h7M8.5 11h4.5M9 16l2 2 4-4.5"/>',
     kupa: '<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5c0 3 1.5 4.5 3.5 4.5M16 6h3c0 3-1.5 4.5-3.5 4.5M12 13v4M8.5 20h7M10 17h4v3h-4z"/>',
     takvimTik: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9.5h16M8.5 3v4M15.5 3v4M8.5 14.5l2.2 2.2 4.8-4.8"/>',
+    rahle: '<path d="M4 6.5c2.8-.9 5.5-.5 8 1.2 2.5-1.7 5.2-2.1 8-1.2v7.8c-2.8-.9-5.5-.5-8 1.2-2.5-1.7-5.2-2.1-8-1.2zM12 7.7v7.8M6.5 20.5l11-5M17.5 20.5l-11-5"/>',
+    seccade: '<rect x="6" y="3" width="12" height="16" rx="1.5"/><path d="M9.5 10.5L12 7.5l2.5 3V14h-5zM6 16h12M8 19v2M12 19v2M16 19v2"/>',
+    tekrar: '<path d="M19.5 9A8 8 0 0 0 5 7M4.5 15A8 8 0 0 0 19 17M4.5 3v4.5H9M19.5 21v-4.5H15"/>',
+    kalkan: '<path d="M12 3l7.5 3v5.5c0 4.6-3.2 8-7.5 9.5-4.3-1.5-7.5-4.9-7.5-9.5V6z"/><path d="M8.8 12l2.2 2.2 4.2-4.4"/>',
+    hilal: '<path d="M15.5 3.5a8.5 8.5 0 1 0 5 15.4 7 7 0 0 1-5-15.4z"/><path d="M18 7.5l.6 1.3 1.4.2-1 1 .2 1.4-1.2-.7-1.2.7.2-1.4-1-1 1.4-.2z"/>',
   };
   function bloklarHepsi() {             // açık haftaların ve kuralların oyun blokları
     var l = [];
@@ -1866,12 +1880,22 @@ window.DERS = {
     { id: 'canli', grup: 'yaris', simge: 'sinif', nl: 'Samen in de les', tr: 'Sınıfla yarıştım', nasilNl: 'Speel een live wedstrijd mee in de les.', nasilTr: 'Derste bir canlı yarışa katıl.', kosul: function () { return (rozet.canli.oyun || 0) >= 1; } },
     { id: 'podyum', grup: 'yaris', simge: 'podyum', nl: 'Op het podium', tr: 'Podyumda', nasilNl: 'Eindig bij de eerste 3 in een live wedstrijd.', nasilTr: 'Canlı yarışta ilk 3’e gir.', kosul: function () { var y = rozet.canli.enIyiYer; return y > 0 && y <= 3; } },
     { id: 'birinci', grup: 'yaris', simge: 'kupa', nl: 'Winnaar', tr: 'Birinci', nasilNl: 'Word eerste in een live wedstrijd.', nasilTr: 'Canlı yarışta birinci ol.', kosul: function () { return rozet.canli.enIyiYer === 1; } },
+    { id: 'ezber-ilk', grup: 'hafiz', simge: 'rahle', nl: 'Eerste ezber', tr: 'İlk ezber', nasilNl: 'Lees je eerste dua of sûre uit het hoofd voor aan je leraar.', nasilTr: 'İlk duanı ya da sûreni hocana ezberden oku.', ilerleme: function () { return [ezberYerel.onay.length, 1]; } },
+    { id: 'namaz-sureleri', grup: 'hafiz', simge: 'kitap', nl: 'Klaar voor het gebed', tr: 'Namaz sûreleri', nasilNl: 'Lees Fâtiha en 3 korte sûres voor aan je leraar.', nasilTr: 'Fâtiha’yı ve 3 kısa sûreyi hocana oku.', ilerleme: function () { return [Math.min(1, onayliSay(['fatiha'])) + Math.min(3, onayliSay(kisaSureler())), 4]; } },
+    { id: 'ezber-5', grup: 'bronz', bolum: 'hafiz', simge: 'rahle', nl: 'Ezber-reiziger', tr: 'Ezber yolcusu', alt: { nl: 'brons', tr: 'bronz' }, nasilNl: 'Lees 5 dua’s of sûres voor aan je leraar.', nasilTr: '5 dua ya da sûreyi hocana oku.', ilerleme: function () { return [ezberYerel.onay.length, 5]; } },
+    { id: 'ezber-10', grup: 'gumus', bolum: 'hafiz', simge: 'rahle', nl: 'Ezber-reiziger', tr: 'Ezber yolcusu', alt: { nl: 'zilver', tr: 'gümüş' }, nasilNl: 'Lees 10 dua’s of sûres voor aan je leraar.', nasilTr: '10 dua ya da sûreyi hocana oku.', ilerleme: function () { return [ezberYerel.onay.length, 10]; } },
+    { id: 'ezber-hepsi', grup: 'altin', bolum: 'hafiz', simge: 'rahle', nl: 'Ezber-reiziger', tr: 'Ezber yolcusu', alt: { nl: 'goud', tr: 'altın' }, nasilNl: 'Lees alle dua’s en sûres van het jaar voor aan je leraar.', nasilTr: 'Yılın bütün dua ve sûrelerini hocana oku.', ilerleme: function () { return [ezberYerel.onay.length, Math.max(1, planListe().length)]; } },
+    { id: 'yariyil', grup: 'hafiz', simge: 'hilal', nl: 'Halverwege', tr: 'Yarı yol', nasilNl: 'Lees alle dua’s en sûres tot en met week 15 voor aan je leraar.', nasilTr: '15. haftaya kadarki bütün dua ve sûreleri hocana oku.', ilerleme: function () { var l = planListe().filter(function (x) { return x.hafta <= 15; }).map(function (x) { return x.id; }); return [onayliSay(l), Math.max(1, l.length)]; } },
+    { id: 'ayetel-kursi', grup: 'hafiz', simge: 'kalkan', nl: 'Âyete’l-Kürsî', tr: 'Âyete’l-Kürsî', nasilNl: 'Lees Âyete’l-Kürsî uit het hoofd voor aan je leraar.', nasilTr: 'Âyete’l-Kürsî’yi hocana ezberden oku.', kosul: function () { return onayliSay(['ayetel-kursi']) > 0; } },
+    { id: 'tekrar-1', grup: 'hafiz', simge: 'tekrar', nl: 'Herhaler', tr: 'Tekrarcı', nasilNl: 'Doe de herhaling van de week.', nasilTr: 'Haftanın tekrarını yap.', ilerleme: function () { return [say(ezberYerel.tekrar), 1]; } },
+    { id: 'tekrar-3', grup: 'hafiz', simge: 'tekrar', nl: 'Niets vergeten', tr: 'Unutmayan', nasilNl: 'Doe de herhaling in 3 verschillende weken.', nasilTr: '3 farklı haftada haftanın tekrarını yap.', ilerleme: function () { return [say(ezberYerel.tekrar), 3]; } },
+    { id: 'namazda', grup: 'hafiz', simge: 'seccade', nl: 'In het gebed', tr: 'Namazda okudum', nasilNl: 'Lees een nieuwe sûre in je gebed en zet een vinkje.', nasilTr: 'Yeni bir sûreyi namazda oku ve işaretle.', ilerleme: function () { return [say(ezberYerel.namaz), 1]; } },
     { id: 'devam', grup: 'devam', simge: 'takvimTik', nl: 'Volhouder', tr: 'Devamlı', nasilNl: 'Speel in 3 verschillende weken.', nasilTr: '3 farklı haftada oyna.', ilerleme: function () { return [say(rozet.haftalar), 3]; } },
     { id: 'odev', grup: 'devam', simge: 'defter', nl: 'Huiswerk klaar', tr: 'Ödev tamam', nasilNl: 'Maak al het huiswerk van één week af.', nasilTr: 'Bir haftanın bütün ödevlerini bitir.', ilerleme: function () { return [odevTamamHafta(), 1]; } },
     { id: 'odev-3', grup: 'devam', simge: 'defter', nl: 'Huiswerkheld', tr: 'Ödev ustası', nasilNl: 'Maak het huiswerk van 3 weken af.', nasilTr: '3 haftanın ödevlerini bitir.', ilerleme: function () { return [odevTamamHafta(), 3]; } },
   ];
   function rozetTamam(r) { if (r.kosul) return r.kosul(); var i = r.ilerleme(); return i[0] >= i[1]; }
-  function rozetGrubu(r) { return r.grup === 'bronz' || r.grup === 'gumus' || r.grup === 'altin' ? 'ogrenme' : r.grup; }
+  function rozetGrubu(r) { return r.bolum || (r.grup === 'bronz' || r.grup === 'gumus' || r.grup === 'altin' ? 'ogrenme' : r.grup); }
   function madalya(r, kazanildi, sinif) {
     return '<svg class="madalya' + (kazanildi ? '' : ' kilitli') + (sinif ? ' ' + sinif : '') + '" viewBox="0 0 64 64" aria-hidden="true" style="--rr:' + ROZET_RENK[r.grup] + '">' +
       '<g class="m-dis"><rect x="13" y="13" width="38" height="38" rx="4"/><rect x="13" y="13" width="38" height="38" rx="4" transform="rotate(45 32 32)"/></g>' +
@@ -2043,10 +2067,11 @@ window.DERS = {
 
     if (ez) html += '<section class="blok odev-parca renk-ezber" data-parca="ezber">' + odevBaslik('ezber', nl(ez.konu.ad), tr(ez.konu.ad)) +
       '<p>Luister naar elke âyet, zeg hem na en leer de sûre uit je hoofd. In de les lees je hem voor aan je leraar.<span class="tr" lang="tr">Her âyeti dinle, tekrar et ve sûreyi ezberle. Derste hocana ezberden okursun.</span></p>' +
-      '<ol class="ayetler">' + ez.b.ayetler.map(function (a) {
-        return '<li><p class="ar ayet" lang="ar">' + esc(a.ar) + '</p>' + (a.ses ? sesDugmesi('ayet/' + a.ses, 'ayet-dinle') : '') + ikiI(a) + '</li>';
-      }).join('') + '</ol>' +
-      '<button type="button" class="dugme secim ezberledim" aria-pressed="' + (k.ezber ? 'true' : 'false') + '">Ik ken hem uit mijn hoofd<small>Ezberledim</small></button></section>';
+      yardimciCiz() + ayetListesi(ez.b.ayetler) +
+      '<button type="button" class="dugme secim ezberledim" aria-pressed="' + (k.ezber ? 'true' : 'false') + '">Ik ken hem uit mijn hoofd<small>Ezberledim</small></button>' +
+      (haftaPlani(h) ? ' <button type="button" class="dugme secim namazda" aria-pressed="' + (ezberYerel.namaz[haftaPlani(h).id] ? 'true' : 'false') + '">Ik heb hem in het gebed gelezen<small>Namazda okudum</small></button>' +
+        '<p class="not">Lees de nieuwe sûre deze week in je gebed. Dat is niet verplicht voor het huiswerk. <span class="tr" lang="tr">Yeni sûreyi bu hafta namazda oku. Ödev için şart değil.</span></p>' : '') +
+      '</section>';
 
     if (o.tecvid && o.tecvid.length) html += '<section class="blok odev-parca renk-kuran" data-parca="tecvid">' + odevBaslik('tecvid', 'Tecvid-speurtocht', 'Tecvid avı') +
       '<p>Tik op de woorden die bij de regel horen en controleer.<span class="tr" lang="tr">Kurala uyan kelimelere dokun ve kontrol et.</span></p>' +
@@ -2113,6 +2138,13 @@ window.DERS = {
       k.ezber = !k.ezber; eb.setAttribute('aria-pressed', k.ezber ? 'true' : 'false');
       if (k.ezber && window.SES) SES.cal('dogru');
       odevKaydet(); guncelle();
+    });
+    var nb = govde.querySelector('.namazda');
+    if (nb) nb.addEventListener('click', function () {
+      var x = haftaPlani(h), v = !ezberYerel.namaz[x.id];
+      nb.setAttribute('aria-pressed', v ? 'true' : 'false');
+      if (v && window.SES) SES.cal('dogru');
+      namazdaYaz(x, v);
     });
 
     govde.querySelectorAll('.avci').forEach(function (el) {
@@ -2236,7 +2268,7 @@ window.DERS = {
   function sinifVerisi(hocaMi) {
     var T = window.TABLO, haftalar = tabloHaftalari(), kisi = {};
     function al(uid, ad) {
-      if (!kisi[uid]) kisi[uid] = { uid: uid, ad: ad || '', haftalar: {}, rozet: 0, rozetler: [] };
+      if (!kisi[uid]) kisi[uid] = { uid: uid, ad: ad || '', haftalar: {}, rozet: 0, rozetler: [], ezberler: [], ezberEk: 0 };
       if (ad && !kisi[uid].ad) kisi[uid].ad = ad;
       return kisi[uid];
     }
@@ -2244,10 +2276,19 @@ window.DERS = {
     var isler = [];
     haftalar.forEach(function (h) {
       isler.push(T.sinif.liste('haftalar/' + h.id + '/ilerleme').then(function (l) { l.forEach(function (d) { var w = hafta(al(d.id, d.ad), h.id); w.yildiz = d.yildiz || 0; w.avci = d.avci || 0; w.test = d.test || 0; }); }));
-      isler.push(T.sinif.liste('haftalar/' + h.id + '/ezber').then(function (l) { l.forEach(function (d) { if (d.tamam) hafta(al(d.id, d.ad), h.id).ezber = true; }); }));
       if (h.zor && h.zor.length) isler.push(T.oku(h.id, 300, true).then(function (l) { l.forEach(function (d) { hafta(al(d.id, d.ad), h.id).zor = d.dogru || 0; }); }));
     });
     isler.push(T.sinif.liste('rozetler').then(function (l) { l.forEach(function (d) { var x = al(d.id, d.ad); x.rozet = d.sayi || 0; x.rozetler = d.liste || []; }); }));
+    // Ezber onayları: bir tablo haftasının ezberi o haftaya, diğerleri (önceki dualar, sûreler) sadece genel puana
+    isler.push(ezberOnaylari().then(function (s) {
+      Object.keys(s).forEach(function (uid) {
+        var x = al(uid, s[uid].ad); x.ezberler = s[uid].liste.slice(); x.ezberEk = 0;
+        x.ezberler.forEach(function (id) {
+          var o = planOge(id), h = o && planHaftasi(o);
+          if (h && haftalar.indexOf(h) !== -1) hafta(x, h.id).ezber = true; else x.ezberEk++;
+        });
+      });
+    }));
     if (hocaMi) isler.push(T.sinif.liste('ogrenciler').then(function (l) { l.forEach(function (d) { var x = al(d.id, d.ad); x.ad = d.ad; x.kullanici = d.kullanici || ''; x.listede = true; }); }));
     return Promise.all(isler).then(function () {
       var l = Object.keys(kisi).map(function (k) { return kisi[k]; });
@@ -2257,7 +2298,7 @@ window.DERS = {
     });
   }
   function haftaPuani(w) { return w ? w.yildiz * PUAN.yildiz + w.avci * PUAN.avci + w.test * PUAN.test + w.zor * PUAN.zor + (w.ezber ? PUAN.ezber : 0) : 0; }
-  function genelPuan(x) { return Object.keys(x.haftalar).reduce(function (t, id) { return t + haftaPuani(x.haftalar[id]); }, 0) + x.rozet * PUAN.rozet; }
+  function genelPuan(x) { return Object.keys(x.haftalar).reduce(function (t, id) { return t + haftaPuani(x.haftalar[id]); }, 0) + (x.ezberEk || 0) * PUAN.ezber + x.rozet * PUAN.rozet; }
   function haftaEnCok(h) {
     var o = h.odev || {};
     return { yildiz: haftaYildizi(h).toplam, avci: (o.tecvid || []).length, test: testAdet(h), zor: h.zor && h.zor.length ? Math.min(ZOR.tur, h.zor.length) : 0, ezber: !!ezberBlogu(h) };
@@ -2273,8 +2314,7 @@ window.DERS = {
     var gecerli = true, veri = [], gorunum = 'hafta', haftalar = tabloHaftalari(), secili = haftalar.length ? haftalar[haftalar.length - 1].id : null, odak = null, hocaMi = false, ben = null;
     temizlik.push(function () { gecerli = false; });
     function suAn() { return gecerli; }
-    var bilgi = '<p class="not sinif-gizlilik">Alleen voor de klas: je ziet dit pas als je bent ingelogd. Op de server staan je voornaam, je punten en je badges. Je gebedenlijst en “Ik ken hem uit mijn hoofd” blijven op je eigen apparaat.' +
-      '<span class="tr" lang="tr">Sadece sınıf için: giriş yapınca görürsün. Sunucuda ön adın, puanların ve rozetlerin durur. Namaz çizelgen ve “Ezberledim” sadece kendi cihazında kalır.</span></p>';
+    var bilgi = EZBER_GIZLILIK;
     if (!T) { govde.innerHTML = '<div class="sinif"><p class="uyari">' + baglantiHatasi() + '</p></div>'; return; }
     if (!T.hesap()) return girisEkrani();
     yukle();
@@ -2295,7 +2335,8 @@ window.DERS = {
         return (hocaMi ? Promise.resolve() : sinifGonder()).then(function () { return sinifVerisi(hocaMi); }).then(function (l) {
           if (!suAn()) return;
           veri = l;
-          if (!hocaMi && !veri.some(function (x) { return x.uid === ben.uid; })) veri.push({ uid: ben.uid, ad: ben.ad, haftalar: {}, rozet: 0, rozetler: [] });
+          if (!hocaMi && !veri.some(function (x) { return x.uid === ben.uid; })) veri.push({ uid: ben.uid, ad: ben.ad, haftalar: {}, rozet: 0, rozetler: [], ezberler: [], ezberEk: 0 });
+          if (!hocaMi) kendiOnaylarim(veri.filter(function (x) { return x.uid === ben.uid; })[0].ezberler);
           odak = hocaMi ? odak : ben.uid;
           ciz();
         });
@@ -2324,7 +2365,7 @@ window.DERS = {
         return '<li class="' + (benMi ? 'ben' : '') + (odak === o.x.uid ? ' odak' : '') + (sira === 1 && o.p > 0 ? ' s1' : '') + '" data-uid="' + esc(o.x.uid) + '">' +
           '<span class="sira-no">' + sira + '</span><button type="button" class="sinif-ad">' + esc(o.x.ad || '?') + (benMi ? '<small> · jij · sen</small>' : '') + '</button>' +
           '<span class="rozet-say" title="Badges · Rozetler">' + MADALYA_MINI + o.x.rozet + '</span>' +
-          (hocaMi && gorunum === 'hafta' && h && ezberBlogu(h) ? '<button type="button" class="ezber-onay" aria-pressed="' + (w.ezber ? 'true' : 'false') + '" aria-label="Ezber ' + esc(o.x.ad) + '">Ezber</button>' : '') +
+          (hocaMi && gorunum === 'hafta' && h && ezberBlogu(h) && haftaPlani(h) ? '<button type="button" class="ezber-onay" aria-pressed="' + (w.ezber ? 'true' : 'false') + '" aria-label="Ezber ' + esc(o.x.ad) + '">Ezber</button>' : '') +
           '<b class="sinif-puan">' + o.p + '</b></li>';
       }).join('');
       govde.innerHTML = '<div class="sinif">' +
@@ -2336,8 +2377,10 @@ window.DERS = {
         (gorunum === 'hafta' && haftalar.length > 1 ? '<div class="hafta-cipler">' + haftalar.map(function (x) {
           return '<button type="button" class="hafta-cip" data-h="' + esc(x.id) + '" aria-pressed="' + (x.id === secili) + '">Week ' + esc(x.no) + '<small>' + esc(x.no) + '. hafta</small></button>';
         }).join('') + '</div>' : '') +
+        hedefCubugu(veri.reduce(function (t, x) { return t + (x.ezberler || []).length; }, 0)) +
+        (hocaMi && ezberKuralYok ? '<p class="uyari">' + KURAL_UYARI + '</p>' : '') +
         (l.length ? '<ol class="sinif-tablo">' + satirlar + '</ol>' : '<p class="sayac">Nog niemand heeft punten. <span class="tr" lang="tr">Henüz kimsenin puanı yok.</span></p>') +
-        (hocaMi ? '<p class="not">Tik op een naam om de groei te zien. Ezber: tik als je de sûre in de les hebt gehoord (+' + PUAN.ezber + ').<span class="tr" lang="tr">Gelişimini görmek için bir isme dokun. Ezber: sûreyi derste dinlediysen dokun (+' + PUAN.ezber + ').</span></p>' : '') +
+        (hocaMi ? '<p class="not">Tik op een naam om de groei en de ezberkaart te zien. Ezber: tik als je de sûre in de les hebt gehoord (+' + PUAN.ezber + ').<span class="tr" lang="tr">Gelişimini ve ezber karnesini görmek için bir isme dokun. Ezber: sûreyi derste dinlediysen dokun (+' + PUAN.ezber + ').</span></p>' : '') +
         '<div class="gelisim-yer"></div>' +
         (hocaMi ? hocaAraclari() : '') +
         puanAciklama() + bilgi + '</div>';
@@ -2358,7 +2401,7 @@ window.DERS = {
           var uid = b.closest('li').dataset.uid, x = veri.filter(function (y) { return y.uid === uid; })[0];
           var w = x.haftalar[secili] || (x.haftalar[secili] = { yildiz: 0, avci: 0, test: 0, zor: 0, ezber: false });
           var yeni = !w.ezber; b.disabled = true;
-          T.sinif.ezberYaz(secili, uid, x.ad, yeni).then(function () { w.ezber = yeni; if (suAn()) ciz(); }, function (e) { b.disabled = false; alertYaz(baglantiHatasi(e)); });
+          ezberOnayYaz(x, haftaPlani(D.haftalar[secili]).id, yeni).then(function () { w.ezber = yeni; if (suAn()) ciz(); }, function (e) { b.disabled = false; alertYaz(ezberHatasi(e)); });
         });
       });
       if (hocaMi) hocaBagla();
@@ -2369,7 +2412,7 @@ window.DERS = {
         '<li>Elke ster in een spel: ' + PUAN.yildiz + '<span class="tr" lang="tr">Oyunlarda her yıldız: ' + PUAN.yildiz + '</span></li>' +
         '<li>Huiswerk: elk gevonden tecvid-woord ' + PUAN.avci + ', elke goede vraag in de weektest ' + PUAN.test + '<span class="tr" lang="tr">Ödev: tecvid avında her bulduğun ' + PUAN.avci + ', haftanın testinde her doğru ' + PUAN.test + '</span></li>' +
         '<li>Moeilijke wedstrijd: elke goede vraag ' + PUAN.zor + '<span class="tr" lang="tr">Zor yarış: her doğru ' + PUAN.zor + '</span></li>' +
-        '<li>Ezber, als je hem in de les aan je leraar voorleest: ' + PUAN.ezber + '<span class="tr" lang="tr">Ezber, derste hocana okuyunca: ' + PUAN.ezber + '</span></li>' +
+        '<li>Elke dua of sûre van je ezberkaart, als je hem in de les aan je leraar voorleest: ' + PUAN.ezber + '<span class="tr" lang="tr">Ezber karnendeki her dua ya da sûre, derste hocana okuyunca: ' + PUAN.ezber + '</span></li>' +
         '<li>Elke badge (alleen bij “Alles samen”): ' + PUAN.rozet + '<span class="tr" lang="tr">Her rozet (sadece “Genel”de): ' + PUAN.rozet + '</span></li></ul></details>';
     }
     function gelisimCiz() {
@@ -2392,7 +2435,24 @@ window.DERS = {
           '</tbody><tfoot><tr><th>Totaal<small>Toplam</small></th><td></td><td class="p">' + haftaPuani(w) + '</td></tr></tfoot></table>' : '') +
         '<h4>Badges · ' + x.rozet + '<small class="tr" lang="tr">Rozetler · ' + x.rozet + '</small></h4>' +
         (kazanilan.length ? '<div class="gelisim-rozetler">' + kazanilan.map(function (r) { return '<span title="' + esc(rozetAdi(r)) + '">' + madalya(r, true) + '</span>'; }).join('') + '</div>' : '<p class="not">Nog geen badges. <span class="tr" lang="tr">Henüz rozet yok.</span></p>') +
+        '<h4>Ezberkaart · ' + x.ezberler.length + ' / ' + planListe().length + '<small class="tr" lang="tr">Ezber karnesi · ' + x.ezberler.length + ' / ' + planListe().length + '</small></h4>' +
+        (hocaMi ? '<p class="not">Tik op een dua of sûre die ' + esc(x.ad) + ' in de les heeft voorgelezen (+' + PUAN.ezber + '). Nog een keer tikken haalt het weg.<span class="tr" lang="tr">' + esc(x.ad) + ' derste hangi dua ya da sûreyi okuduysa ona dokun (+' + PUAN.ezber + '). Bir daha dokununca kalkar.</span></p>' : '') +
+        karneIzgara(function (o) { return x.ezberler.indexOf(o.id) !== -1 ? 'onay' : (!hocaMi && ezberledimMi(o) ? 'ben' : 'yok'); }, hocaMi ? 'hoca' : 'cocuk') +
+        '<p class="gelisim-linkler">' + (hocaMi ? (x.ezberler.length ? '<a class="dugme kucuk" href="#/ezber/belge/' + esc(x.uid) + '">Certificaat<small>Ezber belgesi</small></a>' : '')
+          : '<a class="dugme kucuk" href="#/ezber">Mijn ezberkaart<small>Ezber karnem</small></a>') + '</p>' +
+        '<p class="uyari karne-uyari" role="alert"></p>' +
         '</section>';
+      if (hocaMi) yer.querySelectorAll('.ek-ic[data-id]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var id = b.dataset.id, yeni = x.ezberler.indexOf(id) === -1; b.disabled = true;
+          ezberOnayYaz(x, id, yeni).then(function () {
+            var o = planOge(id), hh = o && planHaftasi(o);
+            if (hh && haftalar.indexOf(hh) !== -1) { var w2 = x.haftalar[hh.id] || (x.haftalar[hh.id] = { yildiz: 0, avci: 0, test: 0, zor: 0, ezber: false }); w2.ezber = yeni; }
+            else x.ezberEk = Math.max(0, (x.ezberEk || 0) + (yeni ? 1 : -1));
+            if (suAn()) ciz();
+          }, function (e) { b.disabled = false; var u = yer.querySelector('.karne-uyari'); if (u) u.innerHTML = ezberHatasi(e); });
+        });
+      });
     }
     function hocaAraclari() {
       var kayitli = veri.slice().sort(function (a, b) { return a.ad.localeCompare(b.ad, 'tr'); });
@@ -2445,7 +2505,7 @@ window.DERS = {
         b.addEventListener('click', function () {
           if (!emin) { emin = true; b.classList.add('emin'); b.innerHTML = 'Zeker? Nog een keer tikken<small>Emin misin? Bir daha dokun</small>'; return; }
           var uid = b.closest('li').dataset.uid; b.disabled = true;
-          T.sinif.cocukCikar(uid, tabloHaftalari().map(function (h) { return h.id; })).then(function () {
+          T.sinif.cocukCikar(uid, D.sira.slice()).then(function () {
             veri = veri.filter(function (x) { return x.uid !== uid; }); if (odak === uid) odak = null; if (suAn()) ciz();
           }, function (e) { b.disabled = false; alertYaz(baglantiHatasi(e)); });
         });
@@ -2455,6 +2515,309 @@ window.DERS = {
   function sinifSeridi() {
     var hs = window.TABLO && TABLO.hesap();
     return '<a class="yaris-serit sinif-serit" href="#/sinif"><span>Mijn klas: ranglijst en jouw groei<small class="tr" lang="tr">Sınıfım: puan tablosu ve gelişimin' + (hs ? '' : ' · giriş yap') + '</small></span><span class="ok" aria-hidden="true">›</span></a>';
+  }
+
+  // =========================================================
+  // EZBER KARNESİ (#/ezber): yıllık plandaki bütün dualar ve sûreler (ezber/plan.js)
+  //   Bu cihazda (dersler-ezber): "Ezberledim", "Namazda okudum", haftanın tekrarı,
+  //     son görülen hoca onayları (rozetler için). Sunucuya gitmez.
+  //   Sunucuda: ezberler/<uid> { ad, liste, son }: hocanın derste dinleyip onayladıkları (sadece hoca yazar).
+  //     Eski haftalık onaylar (haftalar/<hafta>/ezber/<uid>) de sayılır.
+  // =========================================================
+  function planListe() { return (D.ezberPlan && D.ezberPlan.liste) || []; }
+  function planOge(id) { return planListe().filter(function (x) { return x.id === id; })[0] || null; }
+  function noHaftasi(no) {
+    for (var i = 0; i < D.sira.length; i++) { var h = D.haftalar[D.sira[i]]; if (h && Number(h.no) === Number(no)) return h; }
+    return null;
+  }
+  function planHaftasi(x) { var h = x && noHaftasi(x.hafta); return h && ezberBlogu(h) ? h : null; }   // ezberi sitede olan hafta
+  function haftaPlani(h) { return h ? planListe().filter(function (x) { return Number(x.hafta) === Number(h.no); })[0] || null : null; }
+  function planAyetleri(x) {            // metin ve ses: sitedeki haftadan (açıksa), yoksa plan dosyasından
+    var h = planHaftasi(x);
+    if (h) return kilitli(h) ? null : ezberBlogu(h).b.ayetler;
+    return x.ayetler || null;
+  }
+  function sonHaftaNo() {               // açık en yeni haftanın numarası
+    var n = 0;
+    D.sira.forEach(function (id) { var h = D.haftalar[id]; if (h && !kilitli(h)) n = Math.max(n, Number(h.no) || 0); });
+    return n;
+  }
+  function kisaSureler() { return planListe().filter(function (x) { return x.tur === 'sure' && x.id !== 'fatiha'; }).map(function (x) { return x.id; }); }
+  function onayliSay(l) { return l.filter(function (id) { return ezberYerel.onay.indexOf(id) !== -1; }).length; }
+  function ezberledimMi(x) { var h = planHaftasi(x); return !!(ezberYerel.ez[x.id] || (h && odevler[h.id] && odevler[h.id].ezber)); }
+  function ezberDurumu(x) { return ezberYerel.onay.indexOf(x.id) !== -1 ? 'onay' : ezberledimMi(x) ? 'ben' : 'yok'; }
+  function ezberledimYaz(x, v) {
+    if (v) ezberYerel.ez[x.id] = Date.now(); else delete ezberYerel.ez[x.id];
+    var h = planHaftasi(x);
+    if (h) { odevKayit(h).ezber = v; yaz('dersler-odev', odevler); }
+    yaz('dersler-ezber', ezberYerel); rozetOlay('ezber');
+  }
+  function namazdaYaz(x, v) {
+    if (v) ezberYerel.namaz[x.id] = Date.now(); else delete ezberYerel.namaz[x.id];
+    yaz('dersler-ezber', ezberYerel); rozetOlay('ezber');
+  }
+  // Haftanın tekrarı: açık en yeni haftadan önceki, metni sitede olan bir ezber.
+  // Takvim haftasına göre seçilir; o hafta herkes aynısını görür.
+  function haftaninTekrari() {
+    var son = sonHaftaNo();
+    var aday = planListe().filter(function (x) { return Number(x.hafta) < son && planAyetleri(x); });
+    if (!aday.length) return null;
+    var k = haftaKodu(Date.now()), n = 0;
+    for (var i = 0; i < k.length; i++) n = (n * 31 + k.charCodeAt(i)) % 9973;
+    return aday[n % aday.length];
+  }
+  function tekrarEdildi() { return !!ezberYerel.tekrar[haftaKodu(Date.now())]; }
+  function kendiOnaylarim(liste) {      // giriş yapmış çocuğun hoca onayları: rozetler için bu cihazda saklanır
+    var l = (liste || []).filter(planOge);
+    if (l.slice().sort().join() === ezberYerel.onay.slice().sort().join()) return;
+    ezberYerel.onay = l; yaz('dersler-ezber', ezberYerel); rozetOlay('ezber');
+  }
+
+  // ---------- Sunucu: hoca onayları ----------
+  var ezberKuralYok = false;            // Firestore'da yeni kurallar henüz yayınlanmamışsa ezberler okunamaz
+  var KURAL_UYARI = 'De nieuwe regels staan nog niet in Firebase: open Firestore Database → Regels, plak firestore.rules en kies Publiceren.' +
+    '<span class="tr" lang="tr">Yeni kurallar Firebase’de henüz yok: Firestore Database → Regels, firestore.rules dosyasını yapıştır ve Publiceren de.</span>';
+  function ezberHatasi(e) { return e && e.durum === 403 ? KURAL_UYARI : baglantiHatasi(e); }
+  function ezberOnaylari() {            // uid -> { ad, liste: [ezber] }
+    var T = window.TABLO, s = {};
+    function ekle(uid, ad, id) {
+      if (!s[uid]) s[uid] = { ad: ad || '', liste: [] };
+      if (ad && !s[uid].ad) s[uid].ad = ad;
+      if (id && planOge(id) && s[uid].liste.indexOf(id) === -1) s[uid].liste.push(id);
+    }
+    var isler = [T.sinif.liste('ezberler').then(function (l) {
+      ezberKuralYok = false;
+      l.forEach(function (d) { ekle(d.id, d.ad); (d.liste || []).forEach(function (id) { ekle(d.id, d.ad, id); }); });
+    }, function (e) { if (e && e.durum === 403) { ezberKuralYok = true; return; } throw e; })];
+    tabloHaftalari().forEach(function (h) {
+      var x = haftaPlani(h);
+      if (!x || !ezberBlogu(h)) return;
+      isler.push(T.sinif.liste('haftalar/' + h.id + '/ezber').then(function (l) { l.forEach(function (d) { if (d.tamam) ekle(d.id, d.ad, x.id); }); }));
+    });
+    return Promise.all(isler).then(function () { return s; });
+  }
+  // Hoca: bir ezberi onaylar ya da onayı kaldırır. Bütün liste yazılır; kaldırınca eski haftalık onay da silinir.
+  function ezberOnayYaz(x, id, tamam) {
+    var l = (x.ezberler || []).filter(function (i) { return i !== id; });
+    if (tamam) l.push(id);
+    var o = planOge(id), h = o && noHaftasi(o.hafta);
+    return TABLO.sinif.ezberlerYaz(x.uid, x.ad, l, !tamam && h ? h.id : null).then(function () { x.ezberler = l; });
+  }
+  function hedefCubugu(toplam) {
+    var h = (D.ezberPlan && D.ezberPlan.hedef) || 100, y = Math.min(100, Math.round(100 * toplam / h)), tam = toplam >= h;
+    return '<div class="hedef' + (tam ? ' tam' : '') + '"><p class="hedef-bas"><b>Klasdoel: ' + toplam + ' / ' + h + ' ezbers' + (tam ? ' · gehaald!' : '') + '</b>' +
+      '<span class="tr" lang="tr">Sınıf hedefi: ' + toplam + ' / ' + h + ' ezber' + (tam ? ' · ulaştık!' : '') + '</span></p>' +
+      '<span class="hedef-yol" role="progressbar" aria-label="Klasdoel · Sınıf hedefi" aria-valuemin="0" aria-valuemax="' + h + '" aria-valuenow="' + Math.min(toplam, h) + '"><span style="width:' + y + '%"></span></span>' +
+      '<p class="not">Alle dua’s en sûres die de leraar in de les heeft gehoord, van de hele klas samen. <span class="tr" lang="tr">Hocanın derste dinlediği bütün dua ve sûreler, bütün sınıfın toplamı.</span></p></div>';
+  }
+  var EZBER_GIZLILIK = '<p class="not sinif-gizlilik">Alleen voor de klas: je ziet dit pas als je bent ingelogd. Op de server staan je voornaam, je punten, je badges en welke dua’s en sûres je leraar in de les heeft gehoord. Je gebedenlijst, “Ik ken hem uit mijn hoofd” en “In het gebed gelezen” blijven op je eigen apparaat.' +
+    '<span class="tr" lang="tr">Sadece sınıf için: giriş yapınca görürsün. Sunucuda ön adın, puanların, rozetlerin ve hocanın derste dinlediği dua ve sûreler durur. Namaz çizelgen, “Ezberledim” ve “Namazda okudum” sadece kendi cihazında kalır.</span></p>';
+
+  // ---------- Ezber yardımcısı: kelimeleri gizle ----------
+  var YARDIM = [['hepsi', 'Alles', 'Hepsi'], ['yari', 'Om en om', 'Bir atlayarak'], ['ilk', 'Eerste letter', 'İlk harfler'], ['gizli', 'Alles weg', 'Hepsi gizli']];
+  function yardimciCiz() {
+    return '<div class="yardimci" role="group" aria-label="Ezber yardımcısı"><p class="y-ad">Oefenen: verberg woorden<small class="tr" lang="tr">Ezber yardımcısı: kelimeleri gizle</small></p>' +
+      '<div class="y-dugmeler">' + YARDIM.map(function (m, i) {
+        return '<button type="button" class="y-mod" data-m="' + m[0] + '" aria-pressed="' + (i === 0) + '">' + m[1] + '<small>' + m[2] + '</small></button>';
+      }).join('') + '</div>' +
+      '<p class="y-ipucu" hidden>Zeg de âyet uit je hoofd. Tik op een verborgen woord als je het niet meer weet. <span class="tr" lang="tr">Âyeti ezberden söyle. Hatırlamadığın gizli kelimeye dokun, görünür.</span></p></div>';
+  }
+  function ayetListesi(ayetler) {
+    return '<ol class="ayetler">' + ayetler.map(function (a) {
+      return '<li><p class="ar ayet" lang="ar">' + kw(a.ar) + '</p>' + (a.ses ? sesDugmesi('ayet/' + a.ses, 'ayet-dinle') : '') + ikiI(a) + '</li>';
+    }).join('') + '</ol>';
+  }
+  var HAREKE = /[ً-ٰٟۖ-ۭ]/;
+  function harfSonu(k, i) { i++; while (i < k.length && HAREKE.test(k.charAt(i))) i++; return i; }
+  function ilkHarf(k) {                 // ilk harf ve harekeleri; "ال" ile başlıyorsa okunan ilk harf de (الْحَ، الرَّ)
+    var i = harfSonu(k, 0);
+    if ((k.charAt(0) === 'ا' || k.charAt(0) === 'ٱ') && k.charAt(i) === 'ل') { i = harfSonu(k, i); if (i < k.length) i = harfSonu(k, i); }
+    return i;
+  }
+  // "İlk harfler": kelime ikiye bölünür. Birleşik yazı bozulmasın diye iki yanda görünmez birleştirici (ZWJ) var.
+  function ilkBol(ol, ac) {
+    ol.querySelectorAll('.ayet .kw').forEach(function (w) {
+      if (ac && w.dataset.metin == null) {
+        var t = w.textContent, s = t.replace(/\s+$/, ''), n = ilkHarf(s);
+        w.dataset.metin = t;
+        w.innerHTML = '<span class="h1">' + esc(s.slice(0, n)) + (n < s.length ? '‍' : '') + '</span>' +
+          (n < s.length ? '<span class="h2">‍' + esc(s.slice(n)) + '</span>' : '') + esc(t.slice(s.length));
+      } else if (!ac && w.dataset.metin != null) {
+        w.textContent = w.dataset.metin; delete w.dataset.metin;
+      }
+    });
+  }
+  govde.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('.y-mod') : null;
+    if (b) {
+      var kok = b.closest('.blok'), ol = kok && kok.querySelector('.ayetler'), m = b.dataset.m;
+      if (!ol) return;
+      kok.querySelectorAll('.y-mod').forEach(function (d) { d.setAttribute('aria-pressed', d === b ? 'true' : 'false'); });
+      ol.classList.remove('ym-yari', 'ym-ilk', 'ym-gizli');
+      ol.querySelectorAll('.kw.ac').forEach(function (w) { w.classList.remove('ac'); });
+      ilkBol(ol, m === 'ilk');
+      if (m !== 'hepsi') ol.classList.add('ym-' + m);
+      var ip = kok.querySelector('.y-ipucu'); if (ip) ip.hidden = m === 'hepsi';
+      return;
+    }
+    if (kalem.acik) return;
+    var w = e.target.closest ? e.target.closest('.ayetler.ym-yari .ayet .kw, .ayetler.ym-ilk .ayet .kw, .ayetler.ym-gizli .ayet .kw') : null;
+    if (w) w.classList.toggle('ac');
+  });
+
+  // ---------- Karne kutuları ----------
+  var EZBER_GRUP = [{ tur: 'dua', nl: 'Dua’s', tr: 'Dualar' }, { tur: 'sure', nl: 'Sûres', tr: 'Sûreler' }, { tur: 'ayet', nl: 'Âyets', tr: 'Âyetler' }];
+  var DURUM = {
+    onay: { nl: 'Leraar heeft gehoord', tr: 'Hoca dinledi', simge: '✓' },
+    ben: { nl: 'Ik ken hem', tr: 'Ezberledim', simge: '★' },
+    yok: { nl: 'Nog niet', tr: 'Henüz değil', simge: '' },
+  };
+  function ezberAdi(x) { return esc(nl(x.ad)) + (tr(x.ad) && tr(x.ad) !== nl(x.ad) ? '<small class="tr" lang="tr">' + esc(tr(x.ad)) + '</small>' : ''); }
+  // durumu(x) -> onay | ben | yok.  kip: 'cocuk' (karneye götürür), 'hoca' (onay düğmesi), 'karne' (ezber sayfasına götürür)
+  function karneIzgara(durumu, kip) {
+    var son = sonHaftaNo();
+    return EZBER_GRUP.map(function (g) {
+      var l = planListe().filter(function (x) { return x.tur === g.tur; });
+      if (!l.length) return '';
+      return '<div class="karne-grup"><p class="karne-grup-ad">' + g.nl + '<span class="tr" lang="tr"> · ' + g.tr + '</span></p><ul class="karne">' + l.map(function (x) {
+        var d = durumu(x), sonra = Number(x.hafta) > son;
+        var ic = '<span class="ek-simge" aria-hidden="true">' + DURUM[d].simge + '</span><span class="ek-ad">' + ezberAdi(x) + '</span>' +
+          '<span class="ek-alt">Week ' + esc(x.hafta) + ' · ' + DURUM[d].nl + '<span class="tr" lang="tr">' + DURUM[d].tr + '</span></span>';
+        var sinif = 'ek-ic';
+        return '<li class="ek d-' + d + (sonra ? ' sonra' : '') + '">' +
+          (kip === 'hoca' ? '<button type="button" class="' + sinif + '" data-id="' + esc(x.id) + '" aria-pressed="' + (d === 'onay') + '">' + ic + '</button>'
+            : kip === 'cocuk' ? '<span class="' + sinif + '">' + ic + '</span>'
+            : '<a class="' + sinif + '" href="#/ezber/' + esc(x.id) + '">' + ic + '</a>') + '</li>';
+      }).join('') + '</ul></div>';
+    }).join('');
+  }
+  function ezberSeridi() {
+    if (!planListe().length) return '';
+    var n = planListe().filter(function (x) { return ezberDurumu(x) !== 'yok'; }).length, t = haftaninTekrari();
+    return '<a class="yaris-serit ezber-serit" href="#/ezber"><span>Mijn ezberkaart · ' + n + ' / ' + planListe().length +
+      '<small class="tr" lang="tr">Ezber karnem' + (t ? ' · haftanın tekrarı: ' + esc(tr(t.ad)) + (tekrarEdildi() ? ' ✓' : '') : '') + '</small></span><span class="ok" aria-hidden="true">›</span></a>';
+  }
+
+  // ---------- Sayfalar ----------
+  function ezberSayfasi(a, b) {
+    if (!planListe().length) { anaSayfa(); return; }
+    if (a === 'belge') return ezberBelgesi(b);
+    var x = a ? planOge(a) : null;
+    if (x) return ezberDetay(x);
+    ezberKarnesi();
+  }
+  function ezberKarnesi() {
+    document.title = 'Mijn ezberkaart · Ahi Evran Camii';
+    ustGeri('#/', 'Alle weken', 'Tüm haftalar', 'Ezberkaart', 'Ezber karnem');
+    var T = window.TABLO, gecerli = true, sunucu = null, hesap = T && T.hesap();
+    temizlik.push(function () { gecerli = false; });
+    ciz();
+    if (!hesap) return;
+    var hocaMi = hesap.kullanici === 'hoca';
+    (hocaMi ? Promise.resolve(null) : benKimim()).then(function (ben) {
+      return ezberOnaylari().then(function (s) {
+        if (!gecerli) return;
+        if (ben) kendiOnaylarim(s[ben.uid] ? s[ben.uid].liste : []);
+        var toplam = Object.keys(s).reduce(function (t, u) { return t + s[u].liste.length; }, 0);
+        sunucu = { toplam: toplam, ben: ben, hocaMi: hocaMi };
+        ciz();
+      });
+    }).catch(function (e) { if (gecerli) { sunucu = { hata: e }; ciz(); } });
+
+    function ciz() {
+      var l = planListe(), onay = l.filter(function (x) { return ezberDurumu(x) === 'onay'; }).length, ben = l.filter(function (x) { return ezberDurumu(x) === 'ben'; }).length;
+      var t = haftaninTekrari(), ust2;
+      if (!hesap) ust2 = '<a class="yaris-serit sinif-serit" href="#/sinif"><span>Log in en zie wat je leraar al heeft gehoord<small class="tr" lang="tr">Giriş yap, hocanın dinlediklerini gör</small></span><span class="ok" aria-hidden="true">›</span></a>';
+      else if (!sunucu) ust2 = '<p class="sayac">Laden…<span class="tr" lang="tr"> · Yükleniyor…</span></p>';
+      else if (sunucu.hata) ust2 = '<p class="uyari">' + baglantiHatasi(sunucu.hata) + '</p>';
+      else ust2 = hedefCubugu(sunucu.toplam) + (sunucu.hocaMi && ezberKuralYok ? '<p class="uyari">' + KURAL_UYARI + '</p>' : '') +
+        (sunucu.ben && onay ? '<p><a class="dugme kucuk" href="#/ezber/belge">Mijn certificaat<small>Ezber belgem</small></a></p>' : '');
+      govde.innerHTML = '<div class="ezber-karne"><h1>Mijn ezberkaart<span class="tr" lang="tr">Ezber karnem</span></h1>' +
+        '<p class="giris">Alle dua’s en sûres van dit jaar. Tik op een vakje: lees, luister en oefen. Ken je hem? Zet een ster. Lees je hem in de les voor aan je leraar, dan wordt het vakje groen. ' +
+        '<span class="tr" lang="tr">Bu yılın bütün dua ve sûreleri. Bir kutuya dokun: oku, dinle, çalış. Ezberlediysen yıldız koy. Derste hocana okuyunca kutu yeşil olur.</span></p>' +
+        ust2 +
+        (t ? '<a class="tekrar-kart' + (tekrarEdildi() ? ' bitti' : '') + '" href="#/ezber/' + esc(t.id) + '"><span class="tk-simge" aria-hidden="true"><svg viewBox="0 0 24 24">' + ROZET_SIMGE.tekrar + '</svg></span>' +
+          '<span><small>Herhaling van deze week<span class="tr" lang="tr"> · Bu haftanın tekrarı</span></small><b>' + ezberAdi(t) + '</b></span>' +
+          '<span class="ok" aria-hidden="true">' + (tekrarEdildi() ? '✓' : '›') + '</span></a>' : '') +
+        '<p class="karne-sayi"><b>' + onay + '</b> / ' + l.length + ' leraar heeft gehoord · <b>' + ben + '</b> ik ken hem' +
+        '<span class="tr" lang="tr">' + l.length + ' ezberden ' + onay + ' tanesini hoca dinledi · ' + ben + ' tanesini ezberledim</span></p>' +
+        '<ul class="karne-lejant"><li class="d-onay"><span class="ek-simge">✓</span>Leraar heeft gehoord<small class="tr" lang="tr">Hoca dinledi</small></li>' +
+        '<li class="d-ben"><span class="ek-simge">★</span>Ik ken hem<small class="tr" lang="tr">Ezberledim</small></li>' +
+        '<li class="d-yok"><span class="ek-simge"></span>Nog niet<small class="tr" lang="tr">Henüz değil</small></li></ul>' +
+        karneIzgara(ezberDurumu, 'karne') + EZBER_GIZLILIK + '</div>';
+    }
+  }
+  function ezberDetay(x) {
+    document.title = nl(x.ad) + ' · Ezber · Ahi Evran Camii';
+    ustGeri('#/ezber', 'Ezberkaart', 'Ezber karnem', 'Week ' + esc(x.hafta), esc(x.hafta) + '. hafta');
+    var ay = planAyetleri(x), h = noHaftasi(x.hafta), t = haftaninTekrari(), tekrarBu = t && t.id === x.id;
+    function ciz() {
+      var d = ezberDurumu(x), tk = tekrarEdildi();
+      govde.innerHTML = '<div class="ezber-detay renk-ezber"><h1>' + esc(nl(x.ad)) + (tr(x.ad) !== nl(x.ad) ? '<span class="tr" lang="tr">' + esc(tr(x.ad)) + '</span>' : '') + '</h1>' +
+        '<p class="ek-durum d-' + d + '"><span class="ek-simge" aria-hidden="true">' + DURUM[d].simge + '</span>' + DURUM[d].nl + '<small class="tr" lang="tr">' + DURUM[d].tr + '</small></p>' +
+        (tekrarBu ? '<div class="tekrar-not' + (tk ? ' bitti' : '') + '"><b>Herhaling van deze week<span class="tr" lang="tr"> · Bu haftanın tekrarı</span></b>' +
+          '<p>Luister, zeg hem een paar keer op met de knoppen hieronder en tik dan op “Ik heb herhaald”. In de les mag iemand hem voorlezen.<span class="tr" lang="tr">Dinle, aşağıdaki düğmelerle birkaç kez tekrar et, sonra “Tekrar ettim”e dokun. Derste biri ezberden okuyacak.</span></p>' +
+          '<button type="button" class="dugme secim tekrar-d" aria-pressed="' + tk + '"' + (tk ? ' disabled' : '') + '>' + (tk ? 'Herhaald ✓<small>Tekrar ettin ✓</small>' : 'Ik heb herhaald<small>Tekrar ettim</small>') + '</button></div>' : '') +
+        (ay ? '<section class="blok ezber"><h3>Lees hardop en herhaal<small class="tr" lang="tr">Sesli oku ve tekrar et</small></h3>' + yardimciCiz() + ayetListesi(ay) + '</section>'
+          : '<p class="not ezber-yok">' + (h && kilitli(h)
+            ? 'De tekst en het geluid komen met week ' + esc(x.hafta) + '. <span class="tr" lang="tr">Metin ve ses ' + esc(x.hafta) + '. haftayla gelir.</span>'
+            : 'Deze tekst staat (nog) niet op de site. Leer hem in de les of uit je boekje. <span class="tr" lang="tr">Bu metin (henüz) sitede yok. Derste ya da kitabından öğren.</span>') + '</p>') +
+        '<div class="ezber-dugmeler">' +
+        (d !== 'onay' ? '<button type="button" class="dugme secim ezberledim" aria-pressed="' + (d === 'ben') + '">Ik ken hem uit mijn hoofd<small>Ezberledim</small></button> ' : '') +
+        '<button type="button" class="dugme secim namazda" aria-pressed="' + !!ezberYerel.namaz[x.id] + '">Ik heb hem in het gebed gelezen<small>Namazda okudum</small></button></div>' +
+        (d === 'onay' ? '' : '<p class="not">Lees hem in de les uit je hoofd voor aan je leraar. Dan wordt hij groen op je kaart (+' + PUAN.ezber + ' punten).<span class="tr" lang="tr">Derste hocana ezberden oku. Karnende yeşil olur (+' + PUAN.ezber + ' puan).</span></p>') +
+        (h && !kilitli(h) ? '<p class="devam"><a class="dugme" href="#/' + esc(h.id) + '">Naar week ' + esc(h.no) + '<small>' + esc(h.no) + '. haftaya git</small></a></p>' : '') +
+        '</div>';
+      var eb = govde.querySelector('.ezberledim');
+      if (eb) eb.addEventListener('click', function () { var v = !ezberledimMi(x); if (v && window.SES) SES.cal('dogru'); ezberledimYaz(x, v); ciz(); });
+      govde.querySelector('.namazda').addEventListener('click', function () { var v = !ezberYerel.namaz[x.id]; if (v && window.SES) SES.cal('dogru'); namazdaYaz(x, v); ciz(); });
+      var tb = govde.querySelector('.tekrar-d');
+      if (tb) tb.addEventListener('click', function () {
+        if (tekrarEdildi()) return;
+        ezberYerel.tekrar[haftaKodu(Date.now())] = x.id;
+        if (window.SES) SES.cal('rekor');
+        yaz('dersler-ezber', ezberYerel); rozetOlay('ezber'); ciz();
+      });
+    }
+    ciz();
+  }
+  // Ezber belgesi: hocanın dinlediği dualar ve sûreler. Çocuk kendi belgesini, hoca herkesinkini açar; ekranda yazdırılır, kaydedilmez.
+  function ezberBelgesi(uid) {
+    document.title = 'Ezbercertificaat · Ahi Evran Camii';
+    ustGeri(uid ? '#/sinif' : '#/ezber', uid ? 'Mijn klas' : 'Ezberkaart', uid ? 'Sınıfım' : 'Ezber karnem', 'Certificaat', 'Ezber belgesi');
+    var T = window.TABLO, gecerli = true, hs = T && T.hesap();
+    temizlik.push(function () { gecerli = false; });
+    if (!hs) { govde.innerHTML = '<div class="belge-sayfa"><p class="giris">Log eerst in. <span class="tr" lang="tr">Önce giriş yap.</span></p><a class="dugme ana" href="#/sinif">Inloggen<small>Giriş yap</small></a></div>'; return; }
+    var hocaMi = hs.kullanici === 'hoca';
+    govde.innerHTML = '<div class="belge-sayfa"><p class="sayac">Laden…<span class="tr" lang="tr"> · Yükleniyor…</span></p></div>';
+    var kim = hocaMi
+      ? (uid ? T.sinif.belge('ogrenciler/' + encodeURIComponent(uid)).then(function (o) { return o ? { uid: uid, ad: o.ad } : null; }) : Promise.resolve(null))
+      : benKimim();
+    kim.then(function (k) {
+      if (!k) return null;
+      return ezberOnaylari().then(function (s) { return { k: k, liste: s[k.uid] ? s[k.uid].liste : [] }; });
+    }).then(function (r) {
+      if (!gecerli) return;
+      if (!r) { govde.innerHTML = '<div class="belge-sayfa"><p class="uyari">Deze leerling staat niet in de lijst. <span class="tr" lang="tr">Bu çocuk listede yok.</span></p></div>'; return; }
+      if (!hocaMi) kendiOnaylarim(r.liste);
+      var l = planListe().filter(function (x) { return r.liste.indexOf(x.id) !== -1; });
+      var bugun = new Date(Date.now()), g = { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Amsterdam' };
+      govde.innerHTML = '<div class="belge-sayfa">' +
+        (l.length ? '<div class="belge-kagit"><div class="belge-ust">' + AMBLEM + '<span>Ahi Evran Camii<small>Hafta sonu dersleri · Weekendles</small></span></div>' +
+          '<p class="belge-tur">Ezber belgesi<small>Ezbercertificaat</small></p>' +
+          '<p class="belge-ad">' + esc(r.k.ad) + '</p>' +
+          '<p class="belge-metin">aşağıdaki dua ve sûreleri hocasına ezberden okudu.<small>heeft deze dua’s en sûres uit het hoofd voorgelezen aan de leraar.</small></p>' +
+          '<ol class="belge-liste">' + l.map(function (x) { return '<li>' + esc(tr(x.ad) || nl(x.ad)) + '</li>'; }).join('') + '</ol>' +
+          '<p class="belge-sayi">' + l.length + ' / ' + planListe().length + '</p>' +
+          '<div class="belge-alt"><span>Tarih · Datum<b>' + new Intl.DateTimeFormat('tr-TR', g).format(bugun) + '</b></span><span>Hoca · Leraar<b class="imza"></b></span></div></div>' +
+          '<p class="belge-dugmeler"><button type="button" class="dugme ana yazdir">Afdrukken<small>Yazdır</small></button></p>'
+          : '<p class="giris">Nog geen dua of sûre voorgelezen aan de leraar. Lees er een in de les voor, dan komt hij hier. <span class="tr" lang="tr">Hocana henüz dua ya da sûre okumadın. Derste oku, buraya gelir.</span></p>') +
+        '</div>';
+      var y = govde.querySelector('.yazdir'); if (y) y.addEventListener('click', function () { window.print(); });
+    }).catch(function (e) {
+      if (!gecerli) return;
+      govde.innerHTML = '<div class="belge-sayfa"><p class="uyari">' + baglantiHatasi(e) + '</p></div>';
+    });
   }
 
   var AMBLEM = '<svg class="amblem" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="12" fill="currentColor" opacity=".14"/>' +
@@ -2487,7 +2850,7 @@ window.DERS = {
       (hatalar.length ? '<div class="hata">' + hatalar.map(esc).join('<br>') + '</div>' : '') +
       '<a class="yaris-serit canli-serit" href="#/canli"><span>Live wedstrijd in de les<small class="tr" lang="tr">Derste canlı yarış</small></span><span class="ok" aria-hidden="true">›</span></a>' +
       (D.tecvid ? '<a class="yaris-serit tecvid-serit" href="#/tecvid"><span>Tecvid: alle regels op één plek<small class="tr" lang="tr">Tecvid: bütün kurallar tek yerde</small></span><span class="ok" aria-hidden="true">›</span></a>' : '') +
-      rozetSeridi() + sinifSeridi() +
+      rozetSeridi() + ezberSeridi() + sinifSeridi() +
       kartlar + '</div>';
   }
 
@@ -2629,6 +2992,7 @@ window.DERS = {
     else if (p[1] === 'canli') { acik = null; kalemGoster(false); canliSayfasi(); }
     else if (p[1] === 'rozetler') { acik = null; kalemGoster(false); rozetSayfasi(); }
     else if (p[1] === 'sinif') { acik = null; kalemGoster(false); sinifSayfasi(); }
+    else if (p[1] === 'ezber') { acik = null; kalemGoster(false); ezberSayfasi(p[2], p[3]); }
     else if (!h) { acik = null; kalemGoster(false); anaSayfa(); }
     else if (kilitli(h)) { acik = null; kalemGoster(false); haftaKilidi(h); }
     else if (p[2] === 'yaris') { acik = null; kalemGoster(false); yarisSayfasi(h); }

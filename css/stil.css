@@ -773,3 +773,103 @@ p.soru-ar, .soru p.soru-ar { font-family:var(--f-ar); font-weight:400; font-size
 .cocuk-liste .dugme.kucuk { margin-top:0 }
 .sinif-serit { background:var(--ibadet); color:var(--zemin) }
 .sinif-serit small.tr { color:var(--zemin); opacity:.85 }
+
+/* ---------- Ezber yardımcısı: kelimeleri gizle ---------- */
+.yardimci { margin:0 0 14px; padding:10px 12px; border-radius:12px; background:var(--acik) }
+.y-ad { margin:0 0 8px; font-weight:700; font-size:15px; line-height:1.25 }
+.y-ad small { display:block; font-weight:600; font-size:13px; color:var(--tr) }
+.y-dugmeler { display:flex; flex-wrap:wrap; gap:6px }
+.y-mod { font:700 14px/1.15 var(--f); border:2px solid var(--renk); background:var(--kart); color:var(--metin); border-radius:999px; padding:6px 12px; cursor:pointer; text-align:center }
+.y-mod small { display:block; font-weight:600; font-size:12px; color:var(--tr) }
+.y-mod[aria-pressed="true"] { background:var(--renk); color:var(--zemin) }
+.y-mod[aria-pressed="true"] small { color:inherit; opacity:.85 }
+.y-ipucu { margin:8px 0 0; font-size:14px; color:var(--soluk) }
+.y-ipucu .tr { display:block; color:var(--tr) }
+.ym-yari .ayet .kw:nth-child(even):not(.ac),
+.ym-gizli .ayet .kw:not(.ac),
+.ym-ilk .ayet .kw:not(.ac) .h2 { color:transparent; background:var(--acik); border-radius:6px; box-shadow:inset 0 -3px 0 var(--cizgi); cursor:pointer }
+.ym-yari .ayet .kw, .ym-gizli .ayet .kw, .ym-ilk .ayet .kw { cursor:pointer }
+.ym-ilk .ayet .kw:not(.ac) .h1 { color:var(--renk) }
+
+/* ---------- Ezber karnesi ---------- */
+.ezber-serit { background:var(--ezber); color:var(--zemin) }
+.ezber-serit small.tr { color:var(--zemin); opacity:.85 }
+.ezber-karne h1, .ezber-detay h1 { font-family:var(--f-bas); font-weight:800; font-size:clamp(26px,5vw,34px); line-height:1.15; margin:0 0 6px }
+.ezber-karne h1 .tr, .ezber-detay h1 .tr { display:block; font-weight:600; font-size:.62em; color:var(--tr); margin-top:2px }
+.hedef { background:var(--kart); border:1px solid var(--cizgi); border-radius:14px; padding:12px 14px; margin:0 0 16px }
+.hedef-bas { margin:0 0 8px; line-height:1.3 }
+.hedef-bas .tr { display:block; font-size:14px; color:var(--tr); font-weight:600 }
+.hedef-yol { display:block; height:16px; background:var(--acik); border-radius:999px; overflow:hidden }
+.hedef-yol > span { display:block; height:100%; min-width:6px; border-radius:999px; background:linear-gradient(90deg, var(--ibadet), var(--ok)) }
+.hedef.tam .hedef-yol > span { background:var(--yildiz) }
+.hedef .not { margin:8px 0 0; font-size:13px }
+.hedef .not .tr { display:block }
+.tekrar-kart { display:flex; align-items:center; gap:12px; background:var(--kart); border:2px solid var(--ezber); border-radius:14px; padding:10px 14px; margin:0 0 16px; text-decoration:none; color:var(--metin); line-height:1.25 }
+.tekrar-kart > span:nth-child(2) { flex:1 }
+.tekrar-kart small { display:block; font-weight:700; font-size:13px; color:var(--ezber) }
+.tekrar-kart b { font-size:20px; font-family:var(--f-bas); font-weight:800 }
+.tekrar-kart b small { display:inline; color:var(--tr); font-family:var(--f); font-size:14px; margin-left:6px }
+.tekrar-kart .ok { font-size:24px; color:var(--ezber); font-weight:800 }
+.tekrar-kart.bitti { border-style:dashed }
+.tk-simge svg { width:34px; height:34px; display:block; fill:none; stroke:var(--ezber); stroke-width:2; stroke-linecap:round; stroke-linejoin:round }
+.karne-sayi { margin:0 0 8px; font-size:15px }
+.karne-sayi .tr { display:block; color:var(--tr); font-size:14px }
+.karne-lejant { list-style:none; margin:0 0 14px; padding:0; display:flex; flex-wrap:wrap; gap:6px 16px; font-size:14px; font-weight:600 }
+.karne-lejant li { display:flex; align-items:center; gap:6px }
+.karne-lejant small { color:var(--tr); font-weight:500 }
+.karne-grup { margin-bottom:14px }
+.karne-grup-ad { font-family:var(--f-bas); font-weight:800; font-size:17px; margin:0 0 8px }
+.karne-grup-ad .tr { font-family:var(--f); font-weight:600; font-size:14px; color:var(--tr) }
+.karne { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px }
+.ek-ic { display:flex; align-items:flex-start; gap:8px; width:100%; height:100%; text-align:left; font:inherit; color:var(--metin); text-decoration:none;
+  background:var(--kart); border:2px dashed var(--cizgi); border-radius:12px; padding:9px 10px; line-height:1.2 }
+a.ek-ic, button.ek-ic { cursor:pointer }
+.ek-simge { flex:none; width:24px; height:24px; border-radius:50%; display:grid; place-items:center; font-size:14px; font-weight:900; border:2px solid var(--cizgi); color:var(--zemin) }
+.ek-ad { flex:1; min-width:0; font-weight:800; font-size:15px }
+.ek-ad small { display:block; font-weight:600; font-size:12.5px; color:var(--tr) }
+.ek-alt { display:none }
+.d-onay .ek-ic { border:2px solid var(--ok); background:var(--okbg) }
+.d-onay .ek-simge, .karne-lejant .d-onay .ek-simge, .ek-durum.d-onay .ek-simge { background:var(--ok); border-color:var(--ok) }
+.d-ben .ek-ic { border:2px solid var(--yildiz) }
+.d-ben .ek-simge, .karne-lejant .d-ben .ek-simge, .ek-durum.d-ben .ek-simge { background:var(--yildiz); border-color:var(--yildiz); color:#3a2a00 }
+.ek.sonra .ek-ic { opacity:.6 }
+button.ek-ic[aria-pressed="true"] { box-shadow:0 0 0 2px var(--ok) inset }
+button.ek-ic:disabled { opacity:.6 }
+.ek-ic:focus-visible { outline:3px solid var(--kuran); outline-offset:2px }
+.gelisim .karne-grup-ad { font-size:15px }
+.gelisim-linkler .dugme.kucuk { margin-right:6px }
+.ek-durum { display:inline-flex; align-items:center; gap:8px; font-weight:700; margin:0 0 14px; padding:6px 12px 6px 8px; border-radius:999px; background:var(--kart); border:1.5px solid var(--cizgi) }
+.ek-durum small { color:var(--tr); font-weight:600; margin-left:4px }
+.ek-durum.d-onay { border-color:var(--ok) } .ek-durum.d-ben { border-color:var(--yildiz) }
+.tekrar-not { background:var(--kart); border:2px solid var(--ezber); border-radius:14px; padding:12px 14px; margin:0 0 14px }
+.tekrar-not b { color:var(--ezber) }
+.tekrar-not p { margin:6px 0 0 }
+.tekrar-not p .tr { display:block; color:var(--tr); font-size:14px }
+.tekrar-not .dugme.secim { margin-top:10px }
+.ezber-dugmeler .dugme.secim { margin:6px 6px 0 0 }
+.ezber-yok { background:var(--kart); border:1px dashed var(--cizgi); border-radius:12px; padding:12px 14px }
+
+/* ---------- Ezber belgesi ---------- */
+.belge-sayfa { max-width:720px; margin:0 auto }
+.belge-kagit { position:relative; background:var(--kart); color:var(--metin); border:2px solid var(--ezber); outline:6px double var(--ezber); outline-offset:6px; border-radius:6px; padding:36px 34px 30px; margin:14px 12px 18px; text-align:center }
+.belge-ust { display:flex; align-items:center; justify-content:center; gap:10px; font-weight:800; font-size:17px; color:var(--ezber); text-align:left; line-height:1.2 }
+.belge-ust .amblem { width:40px; height:40px; color:var(--ezber) }
+.belge-ust small { display:block; font-weight:600; font-size:13px; color:var(--soluk) }
+.belge-tur { font-family:var(--f-bas); font-weight:800; font-size:clamp(30px,6vw,44px); line-height:1.1; margin:22px 0 4px; letter-spacing:.01em }
+.belge-tur small { display:block; font-family:var(--f); font-weight:600; font-size:15px; color:var(--soluk); margin-top:4px }
+.belge-ad { font-family:var(--f-bas); font-weight:800; font-size:clamp(28px,6vw,40px); margin:22px auto 6px; padding:0 20px 6px; border-bottom:2px solid var(--cizgi); display:inline-block; min-width:60% }
+.belge-metin { margin:6px 0 18px; font-size:17px }
+.belge-metin small { display:block; color:var(--soluk); font-size:14px; margin-top:2px }
+.belge-liste { text-align:left; columns:2; column-gap:28px; margin:0 auto; padding:0 0 0 22px; max-width:520px; font-weight:700; font-size:16px; line-height:1.7 }
+.belge-sayi { font-family:var(--f-bas); font-weight:800; font-size:22px; color:var(--ezber); margin:16px 0 0 }
+.belge-alt { display:flex; justify-content:space-between; gap:20px; margin-top:28px; text-align:left; font-size:13px; color:var(--soluk) }
+.belge-alt b { display:block; color:var(--metin); font-size:16px; margin-top:4px }
+.belge-alt .imza { width:170px; height:34px; border-bottom:1.5px solid var(--metin) }
+.belge-dugmeler { text-align:center }
+@media (max-width:420px) { .belge-kagit { padding:26px 16px 22px; margin:12px 8px 16px } .belge-liste { columns:1 } }
+@media print {
+  .ust, .alt, .kalem, .belge-dugmeler, .rozet-bildirim-yer, .hoca-kap { display:none !important }
+  body, main { background:#fff !important; padding:0 !important; min-height:0 }
+  .belge-kagit { margin:10mm; border-color:#5b2a99; outline-color:#5b2a99; color:#000; background:#fff; break-inside:avoid }
+  .belge-tur, .belge-ad, .belge-alt b { color:#000 }
+}
