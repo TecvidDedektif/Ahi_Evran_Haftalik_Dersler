@@ -754,8 +754,11 @@ p.soru-ar, .soru p.soru-ar { font-family:var(--f-ar); font-weight:400; font-size
 .gelisim-tablo td.p { font-weight:800 }
 .gelisim-tablo tbody tr { border-bottom:1px solid var(--cizgi) }
 .gelisim-tablo tfoot th, .gelisim-tablo tfoot td { font-size:18px }
-.gelisim-rozetler { display:flex; flex-wrap:wrap; gap:6px }
-.gelisim-rozetler .madalya { width:46px; height:46px }
+.gelisim-rozetler { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill, minmax(92px, 1fr)); gap:12px 8px }
+.gelisim-rozetler li { display:flex; flex-direction:column; align-items:center; text-align:center; line-height:1.2 }
+.gelisim-rozetler .madalya { width:46px; height:46px; margin-bottom:4px }
+.gelisim-rozetler b { font-size:13px; font-weight:700 }
+.gelisim-rozetler small { display:block; font-size:12px; color:var(--tr); font-weight:600 }
 .puan-nasil { margin:6px 0 10px; background:var(--kart); border:1px solid var(--cizgi); border-radius:12px; padding:10px 14px }
 .puan-nasil summary { font-weight:700; cursor:pointer }
 .puan-nasil ul { margin:8px 0 0; padding-left:18px; display:grid; gap:6px }
