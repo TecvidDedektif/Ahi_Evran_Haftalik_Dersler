@@ -2434,7 +2434,9 @@ window.DERS = {
           (m.ezber ? kalem('Ezber<small>' + (w.ezber ? 'hoca onayladı' : 'derste hocana oku') + '</small>', w.ezber ? '✓' : '–', null, w.ezber ? PUAN.ezber : 0) : '') +
           '</tbody><tfoot><tr><th>Totaal<small>Toplam</small></th><td></td><td class="p">' + haftaPuani(w) + '</td></tr></tfoot></table>' : '') +
         '<h4>Badges · ' + x.rozet + '<small class="tr" lang="tr">Rozetler · ' + x.rozet + '</small></h4>' +
-        (kazanilan.length ? '<div class="gelisim-rozetler">' + kazanilan.map(function (r) { return '<span title="' + esc(rozetAdi(r)) + '">' + madalya(r, true) + '</span>'; }).join('') + '</div>' : '<p class="not">Nog geen badges. <span class="tr" lang="tr">Henüz rozet yok.</span></p>') +
+        (kazanilan.length ? '<ul class="gelisim-rozetler">' + kazanilan.map(function (r) {
+          return '<li>' + madalya(r, true) + '<b>' + esc(rozetAdi(r)) + '</b>' + (rozetAdiTr(r) !== rozetAdi(r) ? '<small class="tr" lang="tr">' + esc(rozetAdiTr(r)) + '</small>' : '') + '</li>';
+        }).join('') + '</ul>' : '<p class="not">Nog geen badges. <span class="tr" lang="tr">Henüz rozet yok.</span></p>') +
         '<h4>Ezberkaart · ' + x.ezberler.length + ' / ' + planListe().length + '<small class="tr" lang="tr">Ezber karnesi · ' + x.ezberler.length + ' / ' + planListe().length + '</small></h4>' +
         (hocaMi ? '<p class="not">Tik op een dua of sûre die ' + esc(x.ad) + ' in de les heeft voorgelezen (+' + PUAN.ezber + '). Nog een keer tikken haalt het weg.<span class="tr" lang="tr">' + esc(x.ad) + ' derste hangi dua ya da sûreyi okuduysa ona dokun (+' + PUAN.ezber + '). Bir daha dokununca kalkar.</span></p>' : '') +
         karneIzgara(function (o) { return x.ezberler.indexOf(o.id) !== -1 ? 'onay' : (!hocaMi && ezberledimMi(o) ? 'ben' : 'yok'); }, hocaMi ? 'hoca' : 'cocuk') +
